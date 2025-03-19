@@ -14,10 +14,6 @@ from scipy.stats import norm
 # Skiimage import
 from skimage import data
 
-
-import sys
-sys.path.insert(0, './camera-models')
-
 #import transmitter module
 from transmitter import Transmitter as Transmitter
 

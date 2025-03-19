@@ -10,6 +10,8 @@ from scipy import stats
 
 import luxpy as lx
 
+from sightpy import *
+
 
 class Transmitter:
     """
@@ -269,6 +271,34 @@ class Transmitter:
 
         for i in range(Kt.NO_LEDS):
             self._spd_1lm[:, i] = self._avg_power[i] * self._spd_1w[:, i]
+
+    def _create_raytracer_light_source(self):
+        " This function define the light source for the raytracer algorithm "
+        
+        # Set Scene 
+        self._scene_raytracer = Scene(ambient_color = rgb(0.00, 0.00, 0.00))
+
+        # Define a difusse material for the light source
+        emissive_white =Emissive(color = rgb(15., 15., 15.))
+
+        # Define the light suource based on the emissive material
+        self._scene_raytracer.add(
+            # Plane(
+            #     material = emissive_white, 
+            #     center = vec3(213 + 130/2, 554, -227.0 - 105/2), 
+            #     width = 330.0, 
+            #     height = 305.0, 
+            #     u_axis = vec3(1.0, 0.0, 0), 
+            #     v_axis = vec3(0.0, 0, 1.0)), 
+            # importance_sampled = True)
+            Plane(
+                material = emissive_white, 
+                center = vec3(213 + 130/2, 554, -227.0 - 105/2), 
+                width = 330.0, 
+                height = 305.0, 
+                u_axis = vec3(1.0, 0.0, 0), 
+                v_axis = vec3(0.0, 0, 1.0)), 
+            importance_sampled = True)
 
     def plot_spd_at_1lm(self):
         # plot red spd data
