@@ -1,4 +1,8 @@
-from constants import Constants as Kt
+from vlc_rolling.constants import Constants as Kt
+
+from vlc_rolling.indoorenv import Indoorenv 
+
+from vlc_rolling.sightpy import *
 
 # Numeric Numpy library
 import numpy as np
@@ -10,8 +14,10 @@ from scipy import stats
 
 import luxpy as lx
 
-from sightpy import *
 
+# from indoorenv import scene_rt
+
+# from sightpy import Sphere, rgb, vec3
 
 class Transmitter:
     """
@@ -21,6 +27,7 @@ class Transmitter:
     def __init__(
         self,
         name: str,
+        room: Indoorenv,
         position: np.ndarray,
         normal: np.ndarray,
         wavelengths: np.ndarray,
@@ -29,10 +36,15 @@ class Transmitter:
         modulation: str = 'ieee16',
         frequency: float = 1000,
         no_symbols: int = 1000,
-        luminous_flux: float = 1
+        luminous_flux: float = 1,        
             ) -> None:
 
         self._name = name
+
+        self._room = room
+        if not type(self._room) is Indoorenv:
+            raise ValueError(
+                "Indoor environment attribute must be an object type IndoorEnv.")
 
         self._position = np.array(position, dtype=np.float32)
         if self._position.size != 3:
@@ -242,6 +254,24 @@ class Transmitter:
 
         plt.show()
         
+    def _create_light_source_in_scene(self):
+        """
+        This function creates the light source into the 
+        3D scene in the ray-tracer module
+        """
+        emissive_white =Emissive(color = rgb(20., 20., 20.))
+
+        Sc.add(
+            Plane(
+                material = emissive_white,  
+                center = vec3(213 + 130/2, 554, -227.0 - 105/2), 
+                width = 130.0, 
+                height = 105.0, 
+                u_axis = vec3(1.0, 0.0, 0), 
+                v_axis = vec3(0.0, 0, 1.0)), 
+            importance_sampled = True
+            )
+
 
     def _create_spd_1w(self):
         """
@@ -272,15 +302,20 @@ class Transmitter:
         for i in range(Kt.NO_LEDS):
             self._spd_1lm[:, i] = self._avg_power[i] * self._spd_1w[:, i]
 
-    def _create_raytracer_light_source(self):
+    def _create_light_source_raytracer(self)->None:
         " This function define the light source for the raytracer algorithm "
         
-        # Set Scene 
-        self._scene_raytracer = Scene(ambient_color = rgb(0.00, 0.00, 0.00))
-
         # Define a difusse material for the light source
         emissive_white =Emissive(color = rgb(15., 15., 15.))
 
+        # Define the plane for the light source
+        light_source_plane = Plane(
+                material = emissive_white, 
+                center = vec3(213 + 130/2, 554, -227.0 - 105/2), 
+                width = 330.0, 
+                height = 305.0, 
+                u_axis = vec3(1.0, 0.0, 0), 
+                v_axis = vec3(0.0, 0, 1.0))
         # Define the light suource based on the emissive material
         self._scene_raytracer.add(
             # Plane(
@@ -291,13 +326,7 @@ class Transmitter:
             #     u_axis = vec3(1.0, 0.0, 0), 
             #     v_axis = vec3(0.0, 0, 1.0)), 
             # importance_sampled = True)
-            Plane(
-                material = emissive_white, 
-                center = vec3(213 + 130/2, 554, -227.0 - 105/2), 
-                width = 330.0, 
-                height = 305.0, 
-                u_axis = vec3(1.0, 0.0, 0), 
-                v_axis = vec3(0.0, 0, 1.0)), 
+            light_source_plane,
             importance_sampled = True)
 
     def plot_spd_at_1lm(self):

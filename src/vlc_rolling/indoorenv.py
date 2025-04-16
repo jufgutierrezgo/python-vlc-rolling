@@ -1,6 +1,9 @@
 # import numpy library
 import numpy as np
 
+from vlc_rolling.constants import Constants as Kt
+
+from vlc_rolling.sightpy import *
 
 class Indoorenv:
     """
@@ -9,19 +12,23 @@ class Indoorenv:
 
     """
 
+    
+
     def __init__(
-        self,
-        name: str,
-        size: np.ndarray,
-        resolution: float,
-        ceiling: np.ndarray,
-        west: np.ndarray,
-        north: np.ndarray,
-        east: np.ndarray,
-        south: np.ndarray,
-        floor: np.ndarray,
-        no_reflections: int = 3        
+    self,
+    name: str,
+    size: np.ndarray,
+    resolution: float,
+    ceiling: tuple,
+    west: tuple,
+    north: tuple,
+    east: tuple,
+    south: tuple,
+    floor: tuple,
+    no_reflections: int = 3        
     ) -> None:
+
+        VALID_WALL_TYPES = ('diffuse', 'glossy')
 
         self._name = name
         self.deltaA = 'Non defined, create grid.'
@@ -48,35 +55,29 @@ class Indoorenv:
             raise ValueError(
                 "Resolution of points must be a real number greater than zero.")
 
-        self._ceiling = np.array(ceiling)
-        if self._ceiling.size != Kt.NO_WAVELENGTHS:
-            raise ValueError(
-                "Dimension of ceiling reflectance array must be equal to the number of wavelengths.")
+        self._ceiling = self._validate_wall(ceiling, "ceiling")
+        self._west    = self._validate_wall(west, "west")
+        self._north   = self._validate_wall(north, "north")
+        self._east    = self._validate_wall(east, "east")
+        self._south   = self._validate_wall(south, "south")
+        self._floor   = self._validate_wall(floor, "floor")
 
-        self._west = np.array(west)
-        if self._west.size != Kt.NO_WAVELENGTHS:
-            raise ValueError(
-                "Dimension of north reflectance array must be equal to the number of wavelengths.")
-                        
-        self._north = np.array(north)
-        if self._north.size != Kt.NO_WAVELENGTHS:
-            raise ValueError(
-                "Dimension of north reflectance array must be equal to the number of wavelengths.")
+    def _validate_wall(self, wall: tuple, wall_name: str):
+        if not isinstance(wall, tuple) or len(wall) != 2:
+            raise ValueError(f"{wall_name} must be a tuple: (type, color).")
         
-        self._east = np.array(east)
-        if self._east.size != Kt.NO_WAVELENGTHS:
-            raise ValueError(
-                "Dimension of east reflectance array must be equal to the number of wavelengths.")
+        wall_type, color = wall
 
-        self._south = np.array(south)
-        if self._south.size != Kt.NO_WAVELENGTHS:
-            raise ValueError(
-                "Dimension of south reflectance array must be equal to the number of wavelengths.")
+        if wall_type not in ('diffuse', 'glossy'):
+            raise ValueError(f"{wall_name} type must be one of {('diffuse', 'glossy')}. Got '{wall_type}'.")
 
-        self._floor = np.array(floor)
-        if self._floor.size != Kt.NO_WAVELENGTHS:
+        color = np.array(color)
+        if color.size != Kt.NO_WAVELENGTHS:
             raise ValueError(
-                "Dimension of floor reflectance array must be equal to the number of wavelengths.")
+                f"Color array for {wall_name} must have size equal to the number of wavelengths ({Kt.NO_WAVELENGTHS})."
+            )
+        return (wall_type, color)
+
 
     @property
     def name(self):
@@ -124,78 +125,58 @@ class Indoorenv:
                 "Resolution of points must be a real number greater than zero.")
 
     @property
-    def ceiling(self) -> np.ndarray:
-        """The ceiling property"""
+    def ceiling(self) -> tuple:
+        """The ceiling property (type, color array)"""
         return self._ceiling
 
     @ceiling.setter
-    def ceiling(self, ceiling):
-        self._ceiling = np.array(ceiling)
-        if self._ceiling.size != Kt.NO_LEDS:
-            raise ValueError(
-                "Dimension of ceiling reflectance array must be equal to the number of LEDs.")
+    def ceiling(self, ceiling: tuple):
+        self._ceiling = self._validate_wall(ceiling, "ceiling")
 
     @property
-    def west(self) -> np.ndarray:
-        """The west property"""
+    def west(self) -> tuple:
+        """The west property (type, color array)"""
         return self._west
 
     @west.setter
-    def west(self, west):
-        self._west = np.array(west)
-        if self._ceiling.size != Kt.NO_LEDS:
-            raise ValueError(
-                "Dimension of west reflectance array must be equal to the number of LEDs.")
+    def west(self, west: tuple):
+        self._west = self._validate_wall(west, "west")
 
     @property
-    def north(self) -> np.ndarray:
-        """The north property"""
+    def north(self) -> tuple:
+        """The north property (type, color array)"""
         return self._north
 
     @north.setter
-    def north(self, north):
-        self._north = np.array(north)
-        if self._north.size != Kt.NO_LEDS:
-            raise ValueError(
-                "Dimension of north reflectance array must be equal to the number of LEDs.")
+    def north(self, north: tuple):
+        self._north = self._validate_wall(north, "north")
 
     @property
-    def east(self) -> np.ndarray:
-        """The east property"""
+    def east(self) -> tuple:
+        """The east property (type, color array)"""
         return self._east
 
     @east.setter
-    def east(self, east):
-        self._east = np.array(east)
-        if self._east.size != Kt.NO_LEDS:
-            raise ValueError(
-                "Dimension of east reflectance array must be equal to the number of LEDs.")
+    def east(self, east: tuple):
+        self._east = self._validate_wall(east, "east")
 
     @property
-    def south(self) -> np.ndarray:
-        """The east property"""
+    def south(self) -> tuple:
+        """The south property (type, color array)"""
         return self._south
 
     @south.setter
-    def south(self, south):
-        self._south = np.array(south)
-        if self._south.size != Kt.NO_LEDS:
-            raise ValueError(
-                "Dimension of south reflectance array must be equal to the number of LEDs.")
+    def south(self, south: tuple):
+        self._south = self._validate_wall(south, "south")
 
     @property
-    def floor(self) -> np.ndarray:
-        """The floor property"""
+    def floor(self) -> tuple:
+        """The floor property (type, color array)"""
         return self._floor
 
     @floor.setter
-    def floor(self, floor):
-        self._floor = np.array(floor)
-        if self._floor.size != Kt.NO_LEDS:
-            raise ValueError(
-                "Dimension of ceiling reflectance array must be equal to the number of LEDs.")
-
-
+    def floor(self, floor: tuple):
+        self._floor = self._validate_wall(floor, "floor")
     
     def __str__(self) -> str:
         return (
@@ -208,37 +189,8 @@ class Indoorenv:
             f'Number of points: {self.no_points}\n'
         )    
 
-    def create_environment(
-        self,
-        tx: Transmitter,
-        rx: Photodetector,
-        mode: str = 'new'
-            ) -> None:
+    def create_environment(self) -> None:
 
-        self._tx = tx
-        if not type(self._tx) is Transmitter:
-            raise ValueError(
-                "Tranmistter attribute must be an object type Transmitter.")
-
-        self._rx = rx
-        if not type(self._rx) is Photodetector:
-            raise ValueError(
-                "Receiver attribute must be an object type Photodetector.")
-        
-        if (mode != 'new') and (mode != 'modified'):
-            raise ValueError(
-                "Mode attribute must be 'new' or 'modified'.")
-
-        print("\n Creating parameters of indoor environment ...")
-
-        self._create_grid(
-            self._tx._position,
-            self._rx._position,
-            self._tx._normal,
-            self._rx._normal
-            )
-        
-        self._compute_parameters(self._rx._fov, mode)
-        print("Parameters created!\n")
-
+        # Initialize of the scene for the indoor environment 
+        self._scene_rt = Scene(ambient_color = rgb(0.00, 0.00, 0.00))    
     

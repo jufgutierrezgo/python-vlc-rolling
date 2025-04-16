@@ -23,7 +23,9 @@ class Constants:
     # Numbers of LED (Transmission channels)
     NO_LEDS = 3
     # Numbers of Color Channels 
-    NO_DETECTORS = 3    
+    NO_DETECTORS = 3
+    # Numbers of Wavelengths
+    NO_WAVELENGTHS = 3    
     # Speed of light
     SPEED_OF_LIGHT = 299792458
     # Boltzman's constant
