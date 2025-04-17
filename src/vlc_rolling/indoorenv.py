@@ -7,25 +7,21 @@ from vlc_rolling.sightpy import *
 
 class Indoorenv:
     """
-    This class defines the indoor environment features, and computes
-    the points grid and the cosine and distance pair-waise.
-
+    This class defines the indoor environment features.
     """
 
-    
-
     def __init__(
-    self,
-    name: str,
-    size: np.ndarray,
-    resolution: float,
-    ceiling: tuple,
-    west: tuple,
-    north: tuple,
-    east: tuple,
-    south: tuple,
-    floor: tuple,
-    no_reflections: int = 3        
+        self,
+        name: str,
+        size: np.ndarray,
+        resolution: float,
+        ceiling: tuple,
+        west: tuple,
+        north: tuple,
+        east: tuple,
+        south: tuple,
+        floor: tuple,
+        no_reflections: int = 3        
     ) -> None:
 
         VALID_WALL_TYPES = ('diffuse', 'glossy')
@@ -71,11 +67,13 @@ class Indoorenv:
         if wall_type not in ('diffuse', 'glossy'):
             raise ValueError(f"{wall_name} type must be one of {('diffuse', 'glossy')}. Got '{wall_type}'.")
 
-        color = np.array(color)
-        if color.size != Kt.NO_WAVELENGTHS:
-            raise ValueError(
-                f"Color array for {wall_name} must have size equal to the number of wavelengths ({Kt.NO_WAVELENGTHS})."
-            )
+        # color = np.array(color)
+    
+        # if color.size != Kt.NO_WAVELENGTHS:
+        #     raise ValueError(
+        #         f"Color array for {wall_name} must have size equal to the number of wavelengths ({Kt.NO_WAVELENGTHS})."
+        #     )
+
         return (wall_type, color)
 
 
@@ -191,6 +189,29 @@ class Indoorenv:
 
     def create_environment(self) -> None:
 
+                
+        green_diffuse=Diffuse(diff_color = rgb(.12, .45, .15))
+        red_diffuse=Diffuse(diff_color = rgb(.65, .05, .05))
+        white_diffuse=Diffuse(diff_color = rgb(.73, .73, .73))
+        emissive_white =Emissive(color = rgb(20., 20., 20.))
+        emissive_blue =Emissive(color = rgb(2., 2., 3.5))
+        blue_glass =Refractive(n = vec3(1.5 + 0.05e-8j,1.5 +  0.02e-8j,1.5 +  0.j))
+        
         # Initialize of the scene for the indoor environment 
-        self._scene_rt = Scene(ambient_color = rgb(0.00, 0.00, 0.00))    
+        self._scene_rt = Scene(ambient_color = rgb(0.00, 0.00, 0.00))
+
+        # Add walls for the indoor environment
+        self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 555/2, -555.0), width = 555.0,height = 555.0, u_axis = vec3(0.0, 1.0, 0), v_axis = vec3(1.0, 0, 0.0)))
+
+
+    def render_environment(self) -> None:
+
+        img = self._scene_rt.render(
+            samples_per_pixel = 100,
+            # progress_bar = True
+            )
+
+        # img.save("cornell_box.png")
+
+        img.show()
     

@@ -17,7 +17,7 @@ class Constants:
     # directory root of the project
     ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
      # directory to save channel impulse response raw data
-    SENSOR_PATH = ROOT_DIR + "/image_sensors/"
+    SENSOR_PATH = ROOT_DIR + "/sensor-references/"
     # directory to save channel impulse response raw data
     REFLECTANCE_PATH = ROOT_DIR + "/surface_reflectances/"
     # Numbers of LED (Transmission channels)
@@ -26,6 +26,8 @@ class Constants:
     NO_DETECTORS = 3
     # Numbers of Wavelengths
     NO_WAVELENGTHS = 3    
+    # Numbers of Wavelenghts for Gain estimation
+    SIZE_ARRAY_WAVELENGTHS = 401
     # Speed of light
     SPEED_OF_LIGHT = 299792458
     # Boltzman's constant

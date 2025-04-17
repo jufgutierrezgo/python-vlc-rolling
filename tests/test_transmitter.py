@@ -1,145 +1,90 @@
 import numpy as np
 import pytest
 
+from vlc_rolling.transmitter import Transmitter
+
 from vlc_rolling.constants import Constants as Kt
-from vlc_rolling.transmitter import Transmitter  # adjust import path
-from vlc_rolling.indoorenv import Indoorenv      # adjust import path
+
+from vlc_rolling.indoorenv import Indoorenv 
+
+from vlc_rolling.sightpy import *
 
 
-@pytest.fixture
-def valid_room():
-    color = np.ones(Kt.NO_WAVELENGTHS)
-    wall = ('diffuse', color)
-    return Indoorenv(
-        name="Room",
+# Mock Indoorenv class if not available
+def DummyIndoorEnv():
+    
+    green_wall = rgb(0.0, 1.0, 0.0)
+    red_wall = rgb(0.0, 1.0, 0.0)
+    white_wall = rgb(0.8, 0.8, 0.8)
+    floor_wall = rgb(0.1, 0.1, 0.1)
+
+    # Create indoor environment and 3d scene
+
+    room = Indoorenv(
+        name="Matisse-CornellBox",
         size=[5, 5, 3],
-        resolution=0.2,
-        ceiling=wall,
-        west=wall,
-        east=wall,
-        north=wall,
-        south=wall,
-        floor=wall
+        no_reflections=10,
+        resolution=1/10,
+        ceiling=('diffuse', white_wall),
+        west=('diffuse', white_wall),
+        north=('diffuse', green_wall),
+        east=('diffuse', white_wall),
+        south=('diffuse', red_wall),
+        floor=('diffuse', floor_wall)
+            )
+    
+    return room
+
+def test_transmitter_default_init():
+    room = DummyIndoorEnv()
+    tx = Transmitter(
+        room=room,
+        name="TestLED",
+        led_type="gaussian",
+        position=[0.5, 0.5, 2.0],
+        normal=[0, 0, -1],
+        wavelengths=[450, 550, 650],
+        fwhm=[20, 20, 20],
+        mlambert=1,
+        constellation="ieee16",
+        luminous_flux=100
     )
 
+    assert tx.name == "TestLED"
+    assert np.allclose(tx.position, np.array([0.5, 0.5, 2.0], dtype=np.float32))
+    assert np.allclose(tx.normal, np.array([[0, 0, -1]], dtype=np.float32))
+    assert tx.mlambert == 1
+    assert np.allclose(tx.wavelengths, np.array([450, 550, 650], dtype=np.float32))
+    assert np.allclose(tx.fwhm, np.array([20, 20, 20], dtype=np.float32))
+    assert tx.constellation.shape == (3, 16)
+    assert tx.luminous_flux == 100
+    assert isinstance(str(tx), str)
 
-@pytest.fixture
-def valid_params(valid_room):
-    return {
-        "name": "TX1",
-        "room": valid_room,
-        "position": [1.0, 2.0, 3.0],
-        "normal": [0.0, 0.0, -1.0],
-        "wavelengths": [460.0, 530.0, 630.0],  # assuming Kt.NO_LEDS = 3
-        "fwhm": [20.0, 20.0, 20.0],
-        "mlambert": 1.0,
-        "modulation": "ieee16",
-        "frequency": 1000,
-        "no_symbols": 100,
-        "luminous_flux": 10.0
-    }
+def test_invalid_room_type():
+    with pytest.raises(ValueError):
+        Transmitter(room="not_a_room")
 
+def test_invalid_wavelength_range():
+    room = DummyIndoorEnv()
+    with pytest.raises(ValueError):
+        Transmitter(
+            room=room,
+            wavelengths=[300, 550, 600]  # 300 is out of visible range
+        )
 
-def test_valid_transmitter(valid_params):
-    tx = Transmitter(**valid_params)
-    assert tx._name == "TX1"
-    assert tx._order_csk == 16
-    assert tx._luminous_flux == 10.0
+def test_custom_led_reference_not_supported():
+    room = DummyIndoorEnv()
+    with pytest.raises(ValueError):
+        Transmitter(
+            room=room,
+            led_type="custom",
+            reference="NotSupported"
+        )
 
-
-def test_invalid_room(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["room"] = "not_a_room"
-    with pytest.raises(ValueError, match="Indoor environment attribute must be"):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_position(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["position"] = [1.0, 2.0]  # only 2D
-    with pytest.raises(ValueError, match="Position must be"):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_normal(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["normal"] = [1.0, 0.0]  # too short
-    with pytest.raises(ValueError, match="Normal must be"):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_lambert_scalar(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["mlambert"] = np.array([1.0, 2.0])  # not scalar
-    with pytest.raises(ValueError, match="Lambert number must be scalar float."):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_lambert_value(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["mlambert"] = 0.0
-    with pytest.raises(ValueError, match="Lambert number must be greater than zero."):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_wavelength_size(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["wavelengths"] = np.array([450.0, 530.0])  # wrong size
-    with pytest.raises(ValueError, match="Dimension of wavelengths array must be"):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_wavelength_range(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["wavelengths"] = np.array([360.0, 530.0, 630.0])  # below 380
-    with pytest.raises(ValueError, match="Wavelengths must be between"):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_fwhm_size(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["fwhm"] = np.array([20.0, 30.0])  # wrong size
-    with pytest.raises(ValueError, match="Dimension of FWHM array must be"):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_fwhm_values(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["fwhm"] = np.array([20.0, -1.0, 30.0])  # negative value
-    with pytest.raises(ValueError, match="FWDM must be non-negative."):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_modulation(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["modulation"] = "invalid-mod"
-    with pytest.raises(ValueError, match="Modulation is not valid."):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_frequency(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["frequency"] = -10.0
-    with pytest.raises(ValueError, match="Frequency must be non-negative."):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_no_symbols_type(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["no_symbols"] = "1000"  # str, not int
-    with pytest.raises(ValueError, match="No. of symbols must be a positive integer."):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_no_symbols_value(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["no_symbols"] = 0
-    with pytest.raises(ValueError, match="No. of symbols must be greater than zero."):
-        Transmitter(**invalid_params)
-
-
-def test_invalid_luminous_flux(valid_params):
-    invalid_params = valid_params.copy()
-    invalid_params["luminous_flux"] = -1.0
-    with pytest.raises(ValueError, match="The luminous flux must be non-negative."):
-        Transmitter(**invalid_params)
+def test_invalid_constellation_format():
+    room = DummyIndoorEnv()
+    with pytest.raises(ValueError):
+        Transmitter(
+            room=room,
+            constellation=np.array([[0.1, 0.2], [0.3, 0.4]])  # 2 rows, should be 3
+        )

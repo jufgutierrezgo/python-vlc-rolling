@@ -1,5 +1,12 @@
 
-from constants import Constants as Kt
+from vlc_rolling.constants import Constants as Kt
+
+#import transmitter module
+from vlc_rolling.transmitter import Transmitter
+
+from vlc_rolling.indoorenv import Indoorenv
+
+from vlc_rolling.sightpy import *
 
 # numeric numpy library
 import numpy as np
@@ -14,22 +21,13 @@ from scipy.stats import norm
 # Skiimage import
 from skimage import data
 
-#import transmitter module
-from transmitter import Transmitter as Transmitter
-
-#import surface module
-from vlc_rolling.indoorenv import Surface as Surface
-
-# import camera module
-from camera_models import *  # our package
-
 from typing import Optional
 
-import logging
+# import logging
 
 # logging.basicConfig(format=FORMAT)
 
-class Camera:
+class Imagesensor:
     """
     This class defines the camera properties
     """
@@ -41,104 +39,154 @@ class Camera:
         name: str,
         focal_length: float,
         pixel_size: float,
-        px: float,
-        py: float,
-        mx: float,
-        my: float,
-        theta_x: float,
-        theta_y: float,
-        theta_z: float,
-        centre: np.ndarray,
         image_height: float,
-        image_width: float,        
-        transmitter: Transmitter,
-        surface: Surface,
+        image_width: float,
+        camera_center: np.ndarray,
+        camera_look_at: np.ndarray,
+        room: Indoorenv,
         sensor: str
-            ) -> None:
-
+        ) -> None:
+        
         self._name = name
 
-        self._focal_length = np.float32(focal_length)        
+        # Focal length check
+        self._focal_length = np.float32(focal_length)
         if self._focal_length <= 0:
-            raise ValueError("The luminous flux must be non-negative.")
-        
-        self._pixel_size = np.float32(pixel_size)        
+            raise ValueError("Focal length must be positive.")
+
+        # Pixel size check
+        self._pixel_size = np.float32(pixel_size)
         if self._pixel_size <= 0:
-            raise ValueError("Pixel size must be non-negative.")
+            raise ValueError("Pixel size must be positive.")
 
-        # principal point x-coordinate
-        self._px = px
-        if self._px <= 0:
-            raise ValueError("The PX must be non-negative.")
-
-        # principal point y-coordinate
-        self._py = py
-        if self._py <= 0:
-            raise ValueError("The PY must be non-negative.")
-
-        # number of pixels per unit distance in image coordinates in x direction
-        self._mx = mx
-        if self._mx <= 0:
-            raise ValueError("The MX must be non-negative.")
-
-        # number of pixels per unit distance in image coordinates in y direction
-        self._my = my
-        if self._my <= 0:
-            raise ValueError("The PX must be non-negative.")
-
-        # roll angle
-        self._theta_x = theta_x
-
-        # pitch angle
-        self._theta_y = theta_y
-
-        # yaw angle
-        self._theta_z = theta_z
-
-        # camera centre
-        self._centre = np.array(centre,  dtype=np.float32)
-        if not (isinstance(self._centre, np.ndarray)) or self._centre.size != 3:
-            raise ValueError("Camera centre must be an 1d-numpy array [x y z] dtype= float or int.")        
-
-        # image height
+        # Image height
         self._image_height = image_height
         if self._image_height <= 0:
-            raise ValueError("The IMAGE LENGTH must be non-negative.")
+            raise ValueError("Image height must be positive.")
 
-        # image width
+        # Image width
         self._image_width = image_width
         if self._image_width <= 0:
-            raise ValueError("The IMAGE WIDTH must be non-negative.")
-        
-        # resolution height
-        self._resolution_h = round(self._image_height)
-        
-        
-        # resolution width
-        self._resolution_w = round(self._image_width)        
-        
+            raise ValueError("Image width must be positive.")
 
-        self._surface = surface             
-        if not type(surface) is Surface:
-            raise ValueError(
-                "Surface attribute must be an object type Surface.")
+        # Camera position and orientation
+        # TODO: Create validation for these two parameters
+        self._camera_center = camera_center
+        self._camera_look_at = camera_look_at
 
-        self._transmitter = transmitter
-        if not type(transmitter) is Transmitter:
-            raise ValueError(
-                "Transmiyyer attribute must be an object type Transmitter.")
-        
+        # Transmitter type check
+        if not isinstance(room, Indoorenv):
+            raise ValueError("Indoorenv attribute must be of type Indoorenv.")
+        self._room = room
+
+        # Sensor QE loading
         if sensor == 'SonyStarvisBSI':
-            # read text file into NumPy array
-            self._quantum_efficiency = np.loadtxt(
-                Kt.SENSOR_PATH+"SonyStarvisBSI.txt")         
-        
+            self._quantum_efficiency = np.loadtxt(Kt.SENSOR_PATH + "SonyStarvisBSI.txt")
+        else:
+            raise ValueError(f"Sensor '{sensor}' is not supported.")        
         # -------------- I N I T I A L - C O D E -------------------         
-        self._pixel_area = (1/self._mx) * (1/self._my)                
+           
         self._rgb_responsivity = self._compute_responsivity(
                 self._quantum_efficiency
                 ) 
-        
+
+        # Init function for image sensor
+        self._add_camera_to_scene()
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
+
+
+    @property
+    def focal_length(self) -> float:
+        return self._focal_length
+
+    @focal_length.setter
+    def focal_length(self, value: float) -> None:
+        value = np.float32(value)
+        if value <= 0:
+            raise ValueError("Focal length must be positive.")
+        self._focal_length = value
+
+
+    @property
+    def pixel_size(self) -> float:
+        return self._pixel_size
+
+    @pixel_size.setter
+    def pixel_size(self, value: float) -> None:
+        value = np.float32(value)
+        if value <= 0:
+            raise ValueError("Pixel size must be positive.")
+        self._pixel_size = value
+
+
+    @property
+    def image_height(self) -> float:
+        return self._image_height
+
+    @image_height.setter
+    def image_height(self, value: float) -> None:
+        if value <= 0:
+            raise ValueError("Image height must be positive.")
+        self._image_height = value
+
+
+    @property
+    def image_width(self) -> float:
+        return self._image_width
+
+    @image_width.setter
+    def image_width(self, value: float) -> None:
+        if value <= 0:
+            raise ValueError("Image width must be positive.")
+        self._image_width = value
+
+
+    @property
+    def camera_center(self) -> np.ndarray:
+        return self._camera_center
+
+    @camera_center.setter
+    def camera_center(self, value: np.ndarray) -> None:
+        self._camera_center = value  # Add validation if needed
+
+
+    @property
+    def camera_look_at(self) -> np.ndarray:
+        return self._camera_look_at
+
+    @camera_look_at.setter
+    def camera_look_at(self, value: np.ndarray) -> None:
+        self._camera_look_at = value  # Add validation if needed
+
+
+    @property
+    def room(self) -> Indoorenv:
+        return self._room
+
+    @room.setter
+    def room(self, value: Indoorenv) -> None:
+        if not isinstance(value, Indoorenv):
+            raise ValueError("Room must be an instance of Indoorenv.")
+        self._room = value
+
+
+    @property
+    def quantum_efficiency(self) -> np.ndarray:
+        return self._quantum_efficiency
+
+
+    @property
+    def rgb_responsivity(self) -> np.ndarray:
+        return self._rgb_responsivity
+
+
     @property
     def idark(self) -> float:
         return self._idark
@@ -150,9 +198,32 @@ class Camera:
             raise ValueError(
                 "Dark current curve must be float and non-negative.")
 
+    def _add_camera_to_scene(self):
+        """
+        This funtion is used for add/define the camera in the 3d scene 
+        for the ray-tracer.
+        """
+        self._room._scene_rt.add_Camera(
+            screen_width = self._image_width,
+            screen_height = self._image_height,
+            look_from = vec3(278, 278, 800), 
+            look_at = vec3(278,278,0), 
+            focal_distance= self._focal_length, 
+            field_of_view= 80
+            )
+
     def take_picture(self) -> np.ndarray:
         """This function computes the projected image on the image sensor and
         computes the intensity distribution."""    
+
+        # img = self._room._scene_rt.render(
+        #     samples_per_pixel = 100, 
+        #     # progress_bar = True
+        #     )
+
+        # img.save("cornell_box.png")
+
+        # img.show()
       
     def plot_binary_image(self, pixels, height, width):        
     
