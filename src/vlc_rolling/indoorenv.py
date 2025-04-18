@@ -188,20 +188,181 @@ class Indoorenv:
         )    
 
     def create_environment(self) -> None:
+        
+        # Reference frame is defined as follows:
+        # x-axis: length
+        # y-axis: width
+        # z-axis: height
 
-                
-        green_diffuse=Diffuse(diff_color = rgb(.12, .45, .15))
-        red_diffuse=Diffuse(diff_color = rgb(.65, .05, .05))
-        white_diffuse=Diffuse(diff_color = rgb(.73, .73, .73))
-        emissive_white =Emissive(color = rgb(20., 20., 20.))
-        emissive_blue =Emissive(color = rgb(2., 2., 3.5))
-        blue_glass =Refractive(n = vec3(1.5 + 0.05e-8j,1.5 +  0.02e-8j,1.5 +  0.j))
+        # south-wall: x-axis
+        # east-wall: z-axis
+
+        length = self._size[0]
+        height = self._size[1]
+        width = self._size[2]
+
+        if self._east[0] == 'diffuse':            
+            east_material = Diffuse(diff_color=self._east[1])
+        elif self._east[0] == 'glossy':
+            # define glossy material
+            east_material = Glossy(
+                diff_color=self._east[1],
+                spec_color=rgb(1.0, 1.0, 1.0),
+                roughness=0.1
+            )
+        else:
+            raise ValueError(f"Unknown material type '{self._east[0]}' for east wall.")
+
+        if self._north[0] == 'diffuse':            
+            north_material = Diffuse(diff_color=self._north[1])
+        elif self._north[0] == 'glossy':
+            # define glossy material
+            north_material = Glossy(
+                diff_color=self._north[1],
+                spec_color=rgb(1.0, 1.0, 1.0),
+                roughness=0.1
+            )
+        else:
+            raise ValueError(f"Unknown material type '{self._north[0]}' for north wall.")
+
+        if self._west[0] == 'diffuse':            
+            west_material = Diffuse(diff_color=self._west[1])
+        elif self._west[0] == 'glossy':
+            # define glossy material
+            west_material = Glossy(
+                diff_color=self._west[1],
+                spec_color=rgb(1.0, 1.0, 1.0),
+                roughness=0.1
+            )
+        else:
+            raise ValueError(f"Unknown material type '{self._west[0]}' for west wall.")
+
+        if self._south[0] == 'diffuse':            
+            south_material = Diffuse(diff_color=self._south[1])
+        elif self._south[0] == 'glossy':
+            # define glossy material
+            south_material = Glossy(
+                diff_color=self._south[1],
+                spec_color=rgb(1.0, 1.0, 1.0),
+                roughness=0.1
+            )
+        else:
+            raise ValueError(f"Unknown material type '{self._south[0]}' for south wall.")
+
+        if self._ceiling[0] == 'diffuse':            
+            ceiling_material = Diffuse(diff_color=self._ceiling[1])
+        elif self._ceiling[0] == 'glossy':
+            # define glossy material
+            ceiling_material = Glossy(
+                diff_color=self._ceiling[1],
+                spec_color=rgb(1.0, 1.0, 1.0),
+                roughness=0.1
+            )
+        else:
+            raise ValueError(f"Unknown material type '{self._ceiling[0]}' for ceiling.")
+
+        if self._floor[0] == 'diffuse':            
+            floor_material = Diffuse(diff_color=self._floor[1])
+        elif self._floor[0] == 'glossy':
+            # define glossy material
+            floor_material = Glossy(
+                diff_color=self._floor[1],
+                spec_color=rgb(1.0, 1.0, 1.0),
+                roughness=0.1
+            )
+        else:
+            raise ValueError(f"Unknown material type '{self._floor[0]}' for floor.")
+
+        
+
         
         # Initialize of the scene for the indoor environment 
         self._scene_rt = Scene(ambient_color = rgb(0.00, 0.00, 0.00))
 
-        # Add walls for the indoor environment
-        self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 555/2, -555.0), width = 555.0,height = 555.0, u_axis = vec3(0.0, 1.0, 0), v_axis = vec3(1.0, 0, 0.0)))
+        # z_axis_shifting = -width
+        z_axis_shifting = 0
+
+        # Add east wall
+        self._scene_rt.add(
+            Plane(
+                material = east_material,  
+                center = vec3(0, height/2, width/2 + z_axis_shifting), 
+                width = width,
+                height = height, 
+                u_axis = vec3(0.0, 1.0, 0), 
+                v_axis = vec3(0.0, 0, -1.0)
+                )
+            )
+
+        # Add south wall
+        self._scene_rt.add(
+            Plane(
+                material = south_material,  
+                center = vec3(length/2, height/2, + z_axis_shifting), 
+                width = length,
+                height = height, 
+                u_axis = vec3(0.0, 1.0, 0), 
+                v_axis = vec3(1.0, 0, 0.0)
+                )
+            )
+
+        # Add west wall
+        self._scene_rt.add(
+            Plane(
+                material = west_material,  
+                center = vec3(length, height/2, width/2 + z_axis_shifting), 
+                width = width,
+                height = height, 
+                u_axis = vec3(0.0, 1.0, 0), 
+                v_axis = vec3(0.0, 0, -1.0)
+                )
+            )
+
+        # # Add north wall
+        # self._scene_rt.add(
+        #     Plane(
+        #         material = north_material,  
+        #         center = vec3(length/2, height/2, width - width),  
+        #         width = width,
+        #         height = height, 
+        #         u_axis = vec3(0.0, 1.0, 0), 
+        #         v_axis = vec3(0.0, 0, -1.0)
+        #         )
+        #     )
+
+        # Add ceiling
+        self._scene_rt.add(
+            Plane(
+                material = ceiling_material,  
+                center = vec3(length/2, height, width/2 + z_axis_shifting),  
+                width = width,
+                height = length, 
+                u_axis = vec3(1.0, 0.0, 0), 
+                v_axis = vec3(0.0, 0, -1.0)
+                )
+            )
+
+        # Add floor
+        self._scene_rt.add(
+            Plane(
+                material = floor_material,  
+                center = vec3(length/2, 0, width/2 + z_axis_shifting),  
+                width = width,
+                height = length, 
+                u_axis = vec3(1.0, 0.0, 0), 
+                v_axis = vec3(0.0, 0.0, -1.0)
+                )
+            )
+
+        # self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 555/2, -555.0), width = 555.0,height = 555.0, u_axis = vec3(0.0, 1.0, 0), v_axis = vec3(1.0, 0, 0.0)))
+
+        # self._scene_rt.add(Plane(material = green_diffuse,  center = vec3(-0.0, 555/2, -555/2), width = 555.0,height = 555.0,  u_axis = vec3(0.0, 1.0, 0), v_axis = vec3(0.0, 0, -1.0)))
+
+        # self._scene_rt.add(Plane(material = red_diffuse,  center = vec3(555.0, 555/2, -555/2), width = 555.0,height = 555.0,  u_axis = vec3(0.0, 1.0, 0), v_axis = vec3(0.0, 0, -1.0)))
+
+        # self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 555, -555/2), width = 555.0,height = 555.0,  u_axis = vec3(1.0, 0.0, 0), v_axis = vec3(0.0, 0, -1.0)))
+
+        # self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 0., -555/2), width = 555.0,height = 555.0,  u_axis = vec3(1.0, 0.0, 0), v_axis = vec3(0.0, 0, -1.0)))
 
 
     def render_environment(self) -> None:
@@ -211,7 +372,7 @@ class Indoorenv:
             # progress_bar = True
             )
 
-        # img.save("cornell_box.png")
+        # img.save("rolling_cornell_box.png")
 
         img.show()
     

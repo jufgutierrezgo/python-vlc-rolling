@@ -206,8 +206,8 @@ class Imagesensor:
         self._room._scene_rt.add_Camera(
             screen_width = self._image_width,
             screen_height = self._image_height,
-            look_from = vec3(278, 278, 800), 
-            look_at = vec3(278,278,0), 
+            look_from = self._camera_center, 
+            look_at = self._camera_look_at, 
             focal_distance= self._focal_length, 
             field_of_view= 80
             )

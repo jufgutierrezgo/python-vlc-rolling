@@ -280,21 +280,24 @@ class Transmitter:
         self._avg_power_color()
         self._compute_cct()
         self._create_light_source_in_scene()
-
             
     def _create_light_source_in_scene(self):
         """
         This function creates the light source into the 
         3D scene in the ray-tracer module
         """
-        emissive_white =Emissive(color = rgb(20., 20., 20.))
+        emissive_white =Emissive(color = rgb(.1e2, .1e2, .1e2))
 
         self._room._scene_rt.add(
             Plane(
                 material = emissive_white,  
-                center = vec3(213 + 130/2, 554, -227.0 - 105/2), 
-                width = 130.0, 
-                height = 105.0, 
+                center = vec3(
+                    self._position[0], 
+                    self._position[1], 
+                    self._position[2]
+                    ), 
+                width = 1e2, 
+                height = 1e2, 
                 u_axis = vec3(1.0, 0.0, 0), 
                 v_axis = vec3(0.0, 0, 1.0)), 
             importance_sampled = True
@@ -493,21 +496,6 @@ class Transmitter:
     def _gaussian_sprectrum(self, x, mean, std) -> np.ndarray:
         """ This function computes a normal SPD of a monochromatic LED. """
         return (1 / (std * np.sqrt(2*np.pi))) * np.exp(-((x-mean)**2) / (2*std**2))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def _create_spd_1w(self):
         """
