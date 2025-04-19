@@ -212,33 +212,11 @@ class Imagesensor:
             field_of_view= 80
             )
 
-    def take_picture(self) -> np.ndarray:
+    def take_picture(self, plot='false') -> np.ndarray:
         """This function computes the projected image on the image sensor and
         computes the intensity distribution."""    
+        self._npimage_rgblinear_gain = self._room.render_environment(plot=plot)
 
-        # img = self._room._scene_rt.render(
-        #     samples_per_pixel = 100, 
-        #     # progress_bar = True
-        #     )
-
-        # img.save("cornell_box.png")
-
-        # img.show()
-      
-    def plot_binary_image(self, pixels, height, width):        
-    
-        binary_image = np.zeros((height, width))
-        binary_image[pixels[1, :], pixels[0, :]] = 1
-
-        # Plot binary matrix
-        plt.imshow(binary_image, cmap='gray', interpolation='nearest')
-        plt.title("Binary image of the projected area")
-        # plt.scatter(pixels[1,:],pixels[0,:])
-        # plt.xlim([0, self._resolution_w])
-        # plt.ylim([0, self._resolution_h])
-        plt.show()
-
-        return binary_image
         
     def _compute_pixel_power(
             self, 
@@ -308,50 +286,6 @@ class Imagesensor:
         # print(power_pixel)
 
         return power_pixel
-
-    def _draw3d_led(
-            self, 
-            origin_led = np.array([0, 0, 0]),
-            ax: Optional[Axes3D] = None,
-            name: str = "LED") -> Axes3D:
-        
-        if ax is None:
-            ax = plt.gca(projection="3d")
-
-        # Define the 8 vertices of the rectangular parallelepiped
-        vertices = np.array([
-            (-0.5, -0.5, 0), 
-            (-0.5, 0.5, 0), 
-            (0.5, 0.5, 0), 
-            (0.5, -0.5, 0),     
-            (-0.5, -0.5, 0.1),
-            (-0.5, 0.5, 0.1),
-            (0.5, 0.5, 0.1),
-            (0.5, -0.5, 0.1)      
-            ])/5 + origin_led
-
-        # Define the 12 edges of the rectangular parallelepiped
-        edges = np.array([(0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7)])
-
-        # Plot the rectangular parallelepiped
-        for edge in edges:
-            ax.plot3D(vertices[edge, 0], vertices[edge, 1], vertices[edge, 2], 'blue')        
-        
-        ax.text(*(origin_led+[0, 1, 0]), name)
-
-        return ax
-
-    def _compute_power_image(self, pixels_power, pixels_inside, height, width) -> np.ndarray:
-        """ This function computes the image with the received power by each pixel. """
-
-        power_image = np.zeros((height, width))
-
-        for i in range(len(pixels_power)):
-            power_image[pixels_inside[1, i], pixels_inside[0, i]] = pixels_power[i]
-
-        no_blurred_image =  power_image
-
-        return power_image, no_blurred_image
      
     def plot_image_intensity(self):
         """ Plot the image of the received power. """

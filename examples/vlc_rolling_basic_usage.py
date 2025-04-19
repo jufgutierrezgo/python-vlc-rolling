@@ -72,17 +72,17 @@ transmitter = Transmitter(
             )
 print(transmitter)
 
-cam = Imagesensor(
+img_sensor = Imagesensor(
     name="Camera",
-    focal_length = 1e-3,
+    focal_length = 1e0,
     pixel_size = 1,
-    image_height = 100,
-    image_width = 100,
-    camera_center = vec3(WIDTH/2, LENGTH/2, HEIGHT + HEIGHT/20),
+    image_height = 2*25,
+    image_width = 3*25,
+    camera_center = vec3(WIDTH/2, 0.49*LENGTH, HEIGHT + HEIGHT/20),
     camera_look_at = vec3(WIDTH/2, LENGTH/2, HEIGHT),
     room = room,
     sensor='SonyStarvisBSI'
     )
-print(cam)
+print(img_sensor)
 
-room.render_environment()
+img_sensor.take_picture(plot='true')

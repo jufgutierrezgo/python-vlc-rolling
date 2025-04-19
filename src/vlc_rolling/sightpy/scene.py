@@ -99,6 +99,54 @@ class Scene():
         return Image.merge("RGB", img_RGB)
 
 
+    def render_linear(self, samples_per_pixel, progress_bar = False):
+
+        print ("Rendering with RGB Linear ...")
+
+        t0 = time.time()
+        color_RGBlinear = rgb(0.,0.,0.)
+
+        if progress_bar == True:
+
+
+            try:
+                import progressbar
+
+            except ModuleNotFoundError:
+                 print("progressbar module is required. \nRun: pip install progressbar")
+            
+            bar = progressbar.ProgressBar()
+            for i in bar(range(samples_per_pixel)):
+                color_RGBlinear += get_raycolor(self.camera.get_ray(self.n), scene = self)
+                bar.update(i)
+        else:
+
+
+            for i in range(samples_per_pixel):
+                color_RGBlinear += get_raycolor(self.camera.get_ray(self.n), scene = self)
+                
+
+
+        #average samples per pixel (antialiasing)
+        color_RGBlinear = color_RGBlinear/samples_per_pixel
+        
+        color = color_RGBlinear.to_array()
+
+        print ("Render Took", time.time() - t0)
+
+        img_RGB = []
+
+        for c in color:
+            # average ray colors that fall in the same pixel. (antialiasing) 
+            img_RGB += [Image.fromarray((255 * np.clip(c, 0, 1).reshape((self.camera.screen_height, self.camera.screen_width))).astype(np.uint8), "L") ]
+
+        # Convert to NumPy array
+        np_image = np.transpose(np.array(img_RGB), (1, 2, 0))
+        
+        return Image.merge("RGB", img_RGB), np_image
+        # return img_RGB
+
+
     def get_distances(self): #Used for debugging ray-primitive collisions. Return a grey map of objects distances.
 
         print ("Rendering...")

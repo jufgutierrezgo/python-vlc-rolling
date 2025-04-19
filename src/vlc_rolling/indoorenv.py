@@ -5,6 +5,9 @@ from vlc_rolling.constants import Constants as Kt
 
 from vlc_rolling.sightpy import *
 
+from matplotlib import pyplot as plt
+
+
 class Indoorenv:
     """
     This class defines the indoor environment features.
@@ -365,14 +368,22 @@ class Indoorenv:
         # self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 0., -555/2), width = 555.0,height = 555.0,  u_axis = vec3(1.0, 0.0, 0), v_axis = vec3(0.0, 0, -1.0)))
 
 
-    def render_environment(self) -> None:
+    def render_environment(self, plot='false') -> None:
 
-        img = self._scene_rt.render(
+        img_pil, img_np = self._scene_rt.render_linear(
             samples_per_pixel = 100,
-            # progress_bar = True
+            progress_bar = False
             )
 
-        # img.save("rolling_cornell_box.png")
+        # indoor variable for numpy array with rgb linear 
+        self._npimage_rgblinear_gain = img_np
 
-        img.show()
-    
+        if plot == 'true':
+            # img.save("rolling_cornell_box.png")
+            print("RGB Linear numpy image shape:", img_np.shape)
+            img_pil.show()
+
+            plt.imshow(img_np, interpolation='nearest')
+            plt.show()
+                
+        return self._npimage_rgblinear_gain
