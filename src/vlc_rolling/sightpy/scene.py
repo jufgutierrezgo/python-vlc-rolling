@@ -132,18 +132,26 @@ class Scene():
         
         color = color_RGBlinear.to_array()
 
+        print("Get ray color result:", color.shape)
         print ("Render Took", time.time() - t0)
 
-        img_RGB = []
+        img_RGB_uint8 = []
+        img_RGB_float32 = []
 
         for c in color:
             # average ray colors that fall in the same pixel. (antialiasing) 
-            img_RGB += [Image.fromarray((255 * np.clip(c, 0, 1).reshape((self.camera.screen_height, self.camera.screen_width))).astype(np.uint8), "L") ]
+            
+            img_RGB_uint8 += [Image.fromarray((255 * np.clip(c, 0, 1).reshape((self.camera.screen_height, self.camera.screen_width))).astype(np.uint8), "L") ]
+            # img_RGB_float32 += [Image.fromarray((np.clip(c, 0, 1).reshape((self.camera.screen_height, self.camera.screen_width))).astype(np.float32), "L") ]
 
         # Convert to NumPy array
-        np_image = np.transpose(np.array(img_RGB), (1, 2, 0))
+        np_image_uint8 = np.transpose(np.array(img_RGB_uint8), (1, 2, 0))
+        # np_image_float32 = np.transpose(np.array(img_RGB_float32), (1, 2, 0))
         
-        return Image.merge("RGB", img_RGB), np_image
+        # print("float32", np_image_float32)
+        # print("unit8", np_image_uint8)
+
+        return Image.merge("RGB", img_RGB_uint8), np_image_uint8
         # return img_RGB
 
 

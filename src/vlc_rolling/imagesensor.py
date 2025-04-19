@@ -23,9 +23,10 @@ from skimage import data
 
 from typing import Optional
 
-# import logging
+import logging
 
-# logging.basicConfig(format=FORMAT)
+# Set up basic configuration for logging
+logging.basicConfig(level=logging.INFO)
 
 class Imagesensor:
     """
@@ -44,6 +45,7 @@ class Imagesensor:
         camera_center: np.ndarray,
         camera_look_at: np.ndarray,
         room: Indoorenv,
+        transmitter: Transmitter,
         sensor: str
         ) -> None:
         
@@ -74,10 +76,16 @@ class Imagesensor:
         self._camera_center = camera_center
         self._camera_look_at = camera_look_at
 
-        # Transmitter type check
+        # Indoor type check
         if not isinstance(room, Indoorenv):
             raise ValueError("Indoorenv attribute must be of type Indoorenv.")
         self._room = room
+
+        # Transmitter type check
+        self._transmitter = transmitter
+        if not type(transmitter) is Transmitter:
+            raise ValueError(
+                "Transmiyyer attribute must be an object type Transmitter.")
 
         # Sensor QE loading
         if sensor == 'SonyStarvisBSI':
@@ -215,7 +223,31 @@ class Imagesensor:
     def take_picture(self, plot='false') -> np.ndarray:
         """This function computes the projected image on the image sensor and
         computes the intensity distribution."""    
+    
         self._npimage_rgblinear_gain = self._room.render_environment(plot=plot)
+
+        self._crosstalk = self._compute_crosstalk(
+            spd_led=self._transmitter._spd_1lm,
+            color_filter_response=self._rgb_responsivity
+            )
+        
+        self._image_bayer_mask, self._image_bayer_crosstalk = self._create_bayern_filter(
+            Hmat=self._crosstalk,
+            height=self._image_height,
+            width=self._image_width
+            )
+        
+        # Calculate the image considering raytracer + crosstalk_bayern
+        # this 3d numpy array can be used to multiple csk symbols to 
+        # compute the electrical current per pixel 
+        self._image_H_rgblinear = np.multiply(
+            self._image_bayer_crosstalk, 
+            self._npimage_rgblinear_gain
+            )
+        
+        # Example log messages
+        logging.info(f"image_H_rgblinear matrix shape: {self._image_H_rgblinear.shape}")
+
 
         
     def _compute_pixel_power(
@@ -357,7 +389,7 @@ class Imagesensor:
         plt.grid()
         plt.show()
 
-    def _compute_crosstalk(self, spd_led, reflectance, channel_response):
+    def _compute_crosstalk(self, spd_led, color_filter_response):
         """
         This function computes an spectral factor from the SPD of LED, 
         the spectral reflectance of the surface, the spectral response
@@ -374,9 +406,8 @@ class Imagesensor:
         for i in range(Kt.NO_LEDS):
             for j in range(Kt.NO_DETECTORS):
                 H[j, i] = np.sum(
-                    spd_led[:, i] * 
-                    reflectance[:, 1] * 
-                    channel_response[:, j+1]
+                    spd_led[:, i] *  
+                    color_filter_response[:, j+1]
                 )
 
         print("Crosstalk matrix:\n", H)        

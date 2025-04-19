@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 # Library to compute color and photometry parameters
 import luxpy as lx
 
+from scipy import stats             
 
 class Transmitter:
     """                                                                                                                                                                                                                                                                         
@@ -274,13 +275,23 @@ class Transmitter:
         """
         Funtion to run the initial funtions to define the transmitter parameters
         """
-        # Initial functions
-        self._create_led_spd()        
-        self._compute_iler(self._led_spd)
+        # # Initial functions
+        # self._create_led_spd()        
+        # self._compute_iler(self._led_spd)
+        # self._avg_power_color()
+        # self._compute_cct()
+        # self._create_light_source_in_scene()
+
+        # # Initial functions
+        self._create_spd_1w()
+        self._compute_iler(self._spd_1w)
         self._avg_power_color()
-        self._compute_cct()
+        self._create_spd_1lm()
+        # self._create_random_symbols()
+        self._create_test_symbols()
+        self._compute_cct_cri()
         self._create_light_source_in_scene()
-            
+
     def _create_light_source_in_scene(self):
         """
         This function creates the light source into the 
@@ -686,10 +697,13 @@ class Transmitter:
 
         # Computing the xyz coordinates from SPD-RGBY estimated spectrum
         self._XYZ_uppper = lx.spd_to_xyz(
-            [
-                self._array_wavelenghts,
-                np.sum(self._spd_1lm, axis=1)
-            ])
+            np.vstack(
+                [
+                    self._array_wavelenghts,
+                    np.sum(self._spd_1lm, axis=1)
+                ]
+            )
+        )
 
         # Example of xyx with D65 illuminant     
         # self._xyz = lx.spd_to_xyz(
