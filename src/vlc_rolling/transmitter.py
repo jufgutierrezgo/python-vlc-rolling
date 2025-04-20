@@ -301,7 +301,13 @@ class Transmitter:
         This function creates the light source into the 
         3D scene in the ray-tracer module
         """
-        emissive_white =Emissive(color = rgb(.1e2, .1e2, .1e2))
+        emissive_white =Emissive(
+            color = rgb(
+                self._luminous_flux, 
+                self._luminous_flux,
+                self._luminous_flux
+                )
+            )
 
         self._room._scene_rt.add(
             Plane(

@@ -172,7 +172,7 @@ class RollingShutter:
                     axis=1
                     ).T
 
-                logging.info(f"Symbol CSK shape:{symbol_csk.shape}")
+                logging.debug(f"Symbol CSK shape:{symbol_csk.shape}")
 
             else:
                 # results = c()*si
@@ -186,15 +186,11 @@ class RollingShutter:
                     axis=1
                     ).T
                 
-                logging.info(f"Symbol CSK shape:{symbol_csk.shape}")
+                logging.debug(f"Symbol CSK shape:{symbol_csk.shape}")
                 
-            logging.info(f"No Symbol:{no_symbol}")
-            logging.info(
-                f"Im_crosstalk_rgblinear shape: {im_crosstalk_rgblinear[row, :, :].shape}"
-                )
-            logging.info(
-                f"Image current shape: {image_current}"
-                )
+        logging.info(f"No Symbol:{no_symbol}")
+        logging.info(f"Im_crosstalk_rgblinear shape: {im_crosstalk_rgblinear.shape}")
+        logging.info(f"Image current shape: {image_current}")
 
         return image_current
     
@@ -264,7 +260,7 @@ class RollingShutter:
     
     def plot_color_image(self):
 
-        logging.info(f"RGB image:", self._rgb_image)   
+        logging.info(f"RGB image: {self._rgb_image}")   
 
         plt.imshow(self._rgb_image)
         plt.title('RGB Image')        
@@ -275,7 +271,7 @@ class RollingShutter:
         logging.info(f"Noisy image:", self._noisy_image)   
 
         plt.imshow(self._noisy_image)
-        plt.title('RGB Image')        
+        plt.title('RGB Image with Noise')        
         plt.show()
     
     def add_blur(self, size=7, center=3.5, sigma=1.5) -> np.ndarray:    

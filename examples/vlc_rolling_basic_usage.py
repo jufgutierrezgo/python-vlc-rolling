@@ -67,7 +67,7 @@ transmitter = Transmitter(
     fwhm=[20, 30, 20],
     constellation='ieee16',
     frequency=1e4,
-    luminous_flux=5000    
+    luminous_flux=50    
             )
 print(transmitter)
 
@@ -75,8 +75,8 @@ img_sensor = Imagesensor(
     name="Camera",
     focal_length = 1e0,
     pixel_size = 1,
-    image_height = 2*10,
-    image_width = 3*10,
+    image_height = 2*50,
+    image_width = 3*50,
     camera_center = vec3(WIDTH/2, 0.49*LENGTH, HEIGHT + HEIGHT/20),
     camera_look_at = vec3(WIDTH/2, LENGTH/2, HEIGHT),
     room = room,
@@ -86,8 +86,8 @@ img_sensor = Imagesensor(
 print(img_sensor)
 img_sensor.plot_responsivity()
 img_sensor.take_picture(plot='false')
-img_sensor.plot_crosstalk_rgblinear_image()
 img_sensor.plot_rgblinear_image()
+img_sensor.plot_crosstalk_rgblinear_image()
 
 rollingshutter = RollingShutter(
     name="rs",
