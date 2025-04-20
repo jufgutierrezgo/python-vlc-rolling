@@ -371,7 +371,7 @@ class Indoorenv:
     def render_environment(self, plot='false') -> None:
 
         img_pil, img_np = self._scene_rt.render_linear(
-            samples_per_pixel = 100,
+            samples_per_pixel = 1000,
             progress_bar = False
             )
 
