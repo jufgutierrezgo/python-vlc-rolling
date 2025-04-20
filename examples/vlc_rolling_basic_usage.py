@@ -1,15 +1,13 @@
-# Import Transmitter
+# Import Symbol Constants
+from vlc_rolling.constants import Constants as Kt
+
 from vlc_rolling.transmitter import Transmitter
-# Import Photodetector
-# from vlc_rm.photodetector import Photodetector
-# Import Indoor Environment
+
 from vlc_rolling.indoorenv import Indoorenv
 
 from vlc_rolling.imagesensor import Imagesensor
-# Import REcursiveModel
-# from vlc_rm.recursivemodel import Recursivemodel
-# Import Symbol Constants
-from vlc_rolling.constants import Constants as Kt
+
+from vlc_rolling.rollingshutter import RollingShutter\
 
 from vlc_rolling.sightpy import *
 
@@ -68,7 +66,8 @@ transmitter = Transmitter(
     wavelengths=[620, 530, 475],
     fwhm=[20, 30, 20],
     constellation='ieee16',
-    luminous_flux=5000
+    frequency=1e4,
+    luminous_flux=5000    
             )
 print(transmitter)
 
@@ -76,13 +75,35 @@ img_sensor = Imagesensor(
     name="Camera",
     focal_length = 1e0,
     pixel_size = 1,
-    image_height = 2*25,
-    image_width = 3*25,
+    image_height = 2*10,
+    image_width = 3*10,
     camera_center = vec3(WIDTH/2, 0.49*LENGTH, HEIGHT + HEIGHT/20),
     camera_look_at = vec3(WIDTH/2, LENGTH/2, HEIGHT),
     room = room,
+    transmitter=transmitter,
     sensor='SonyStarvisBSI'
     )
 print(img_sensor)
+img_sensor.plot_responsivity()
+img_sensor.take_picture(plot='false')
+img_sensor.plot_crosstalk_rgblinear_image()
+img_sensor.plot_rgblinear_image()
 
-img_sensor.take_picture(plot='true')
+rollingshutter = RollingShutter(
+    name="rs",
+    t_exposure=85e-6,
+    t_rowshift=18.904e-6,
+    t_offset=0,
+    iso=200,    
+    adc_resolution=8,
+    gain_pixel=3.42e8,
+    temperature=298,
+    idark=1e-11,
+    transmitter=transmitter,
+    imagesensor=img_sensor
+)
+
+rollingshutter.plot_current_image()
+rollingshutter.plot_color_image()
+rollingshutter.add_blur(size=7, center=3.5, sigma=0.5)
+rollingshutter.plot_blurred_image()

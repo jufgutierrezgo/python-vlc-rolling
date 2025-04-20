@@ -247,8 +247,24 @@ class Imagesensor:
         
         # Example log messages
         logging.info(f"image_H_rgblinear matrix shape: {self._image_H_rgblinear.shape}")
+        logging.info(f"image H rgblinear matrix:\n {self._image_H_rgblinear}")
 
+    def plot_rgblinear_image(self):
 
+        logging.info(f"RGBLinear Image: {self._npimage_rgblinear_gain}")   
+
+        plt.imshow(self._npimage_rgblinear_gain)
+        plt.title('RGBLinear Image')        
+        plt.show()
+        
+
+    def plot_crosstalk_rgblinear_image(self):
+
+        logging.info(f"Crosstalk+RGBLinear Image: {self._image_H_rgblinear}")   
+
+        plt.imshow(self._image_H_rgblinear)
+        plt.title('Crosstalk+RGBLinear Image')        
+        plt.show()
         
     def _compute_pixel_power(
             self, 

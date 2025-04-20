@@ -1,4 +1,4 @@
-from constants import Constants as Kt
+from vlc_rolling.constants import Constants as Kt
 
 # numeric numpy library
 import numpy as np
@@ -19,11 +19,12 @@ import sys
 sys.path.insert(0, './camera-models')
 
 # import transmitter module
-from transmitter import Transmitter as Transmitter
+from vlc_rolling.transmitter import Transmitter
 # import surface module 
-from vlc_rolling.indoorenv import Surface as Surface
-# import camera module 
-from camera import Camera
+from vlc_rolling.indoorenv import Indoorenv
+# import image sensor module 
+from vlc_rolling.imagesensor import Imagesensor
+
 
 from typing import Optional
 
@@ -42,15 +43,15 @@ class RollingShutter:
         self,
         name: str,
         t_exposure: float,
-        t_rowdelay: float,
-        t_start: float,
+        t_rowshift: float,
+        t_offset: float,
         iso: float,
         adc_resolution: int,        
         gain_pixel: float,
         temperature: float,
         idark: float,
         transmitter: Transmitter,
-        camera: Camera        
+        imagesensor: Imagesensor        
             ) -> None:
 
         self._name = name
@@ -59,18 +60,18 @@ class RollingShutter:
         if self._t_exposure <= 0:
             raise ValueError("The exposure time must be a float non-negative.")
         
-        self._t_rowdelay = np.float32(t_rowdelay)        
-        if self._t_rowdelay <= 0:
+        self._t_rowshift = np.float32(t_rowshift)        
+        if self._t_rowshift <= 0:
             raise ValueError("The row delay time must be a float non-negative.")
-        self._bandwidth = 1/self._t_rowdelay
+        self._bandwidth = 1/self._t_rowshift
 
-        self._t_start = np.float32(t_start)        
-        if self._t_rowdelay <= 0:
+        self._t_offset = np.float32(t_offset)        
+        if self._t_offset < 0:
             raise ValueError(
                 "The row adquisition start time must be non-negative."
                 )
 
-        self._iso = np.int(iso)        
+        self._iso = np.int32(iso)        
         if self._iso <= 0:
             raise ValueError(
                 "The ISO must be integer non-negative."
@@ -90,29 +91,31 @@ class RollingShutter:
         self._transmitter = transmitter
         if not type(transmitter) is Transmitter:
             raise ValueError(
-                "Transmiyyer attribute must be an object type Transmitter.")
+                "Transmitter attribute must be an object type Transmitter.")
         
-        self._camera = camera
-        if not type(camera) is Camera:
+        self._imagesensor = imagesensor
+        if not type(imagesensor) is Imagesensor:
             raise ValueError(
-                "Camera attribute must be an object type Camera.")
+                "Image sensor attribute must be an object type Image sensor.")
         
-        self._index_row_bins = self._compute_row_bins()
-
+        self._init_rollingshutter()
+            
+    def _init_rollingshutter(self) -> None:
+        
         self._image_current = self._compute_image_current(
             symbols_csk=self._transmitter._symbols_csk,
-            im_bayern_crostalk=self._camera._image_bayern_crosstalk,
-            im_gain=camera._power_image,
-            index_bins=self._index_row_bins,
-            height=self._camera._resolution_h,
-            width=self._camera._resolution_w,
-            t_rowdelay=self._t_rowdelay
-        )
+            im_crosstalk_rgblinear=self._imagesensor._image_H_rgblinear,
+            height=self._imagesensor._image_height,
+            width=self._imagesensor._image_width,
+            t_rowshift=self._t_rowshift,
+            t_offset=self._t_offset,
+            t_exposure=self._t_exposure
+            )
         
         self._rgb_image = self._bayerGBGR_to_RGB(
-            bayer=self._image_current,
-            height=self._camera._resolution_h,
-            width=self._camera._resolution_w
+            current_image=self._image_current,
+            height=self._imagesensor._image_height,
+            width=self._imagesensor._image_width
             )
 
         self._noisy_image = self._add_noise_to_raw_image(
@@ -123,86 +126,99 @@ class RollingShutter:
             B=self._bandwidth,
             T=self._temperature
             )
-        
-    def _compute_row_bins(self) -> np.ndarray:
-        """ This function computes the row bins respect to each of symbols. """
-
-        # compute the time of each symbol. It is equal to 1/f.
-        t_symbol = 1/self._transmitter._frequency
-
-        # compute the symbol corresponding to the last row 
-        last_symbol = int(
-                ((self._t_rowdelay * self._camera._resolution_h)
-                + self._t_start) / t_symbol 
-            ) + 1
-
-        no_symbol = np.arange(0, last_symbol+1)
-        
-        index_bins = (
-            ((no_symbol*t_symbol) - self._t_start - self._t_exposure/2)
-            / self._t_rowdelay        
-            ).astype(int) + 1
-        index_bins[-1] = self._camera._resolution_h
-        index_bins[0] = 0
-
-        print("Row bins:")
-        print(index_bins)
-
-        return index_bins
 
     def _compute_image_current(
             self, 
             symbols_csk, 
-            im_bayern_crostalk, 
-            im_gain,
-            index_bins,
+            im_crosstalk_rgblinear,
             height,
             width,
-            t_rowdelay) -> np.ndarray:
+            t_rowshift,
+            t_offset,
+            t_exposure) -> np.ndarray:
         """ This function computes the image with the transmitter symbols. """
 
         image_current = np.zeros((height, width))
         image_color = np.zeros((height, width))
 
-        for symbol in np.arange(1,np.size(index_bins)):
-            image_color[
-                index_bins[symbol-1]: index_bins[symbol], :
-                ] = np.sum(
-                    np.multiply(
-                        im_bayern_crostalk[
-                            index_bins[symbol-1]: index_bins[symbol], :, :],
-                        symbols_csk[:, symbol-1].reshape(1, 1, 3)
-                    ),
-                axis=2
-                )
-            # print(symbols_csk[:, symbol-1].reshape(1, 1, 3))
+        logging.info(f"Symbols CSK array shape: {symbols_csk.shape}")
 
-        image_current = im_gain * image_color 
-        image_bayer_norm = image_current / np.max(image_current)        
+        # compute the time of each symbol. It is equal to 1/f.
+        self._t_symbol = 1/self._transmitter._frequency
+        t_symbol = self._t_symbol
+
+        for row in range(0,height):
+
+            t_start = t_offset + row * t_rowshift
+            t_end = t_start + t_exposure
+
+            t_switch = np.ceil(
+                ((row * t_rowshift) + t_offset) / t_symbol
+                ) / t_symbol
+
+            no_symbol = np.int32(
+                np.floor(
+                    ((row * t_rowshift) + t_offset) / t_symbol
+                )
+            )          
+            
+            if t_end <= t_switch:
+                # results = c()*si
+                symbol_csk = np.reshape(symbols_csk[:, no_symbol],(1,3))
+                
+                # symbol_csk = np.transpose(symbol_csk)
+                image_current[row, :] = np.sum(
+                    im_crosstalk_rgblinear[row, :, :] * symbol_csk,
+                    axis=1
+                    ).T
+
+                logging.info(f"Symbol CSK shape:{symbol_csk.shape}")
+
+            else:
+                # results = c()*si
+                coeff1 = ((t_switch - t_start)/t_exposure)
+                coeff2 = ((t_end - t_switch)/t_exposure)
+                symbol_csk = np.int32(coeff1*symbols_csk[:, no_symbol] + coeff2*symbols_csk[:, no_symbol+1])
+                
+                # symbol_csk = np.transpose(symbol_csk)
+                image_current[row, :] = np.sum(
+                    im_crosstalk_rgblinear[row, :, :] * symbol_csk,
+                    axis=1
+                    ).T
+                
+                logging.info(f"Symbol CSK shape:{symbol_csk.shape}")
+                
+            logging.info(f"No Symbol:{no_symbol}")
+            logging.info(
+                f"Im_crosstalk_rgblinear shape: {im_crosstalk_rgblinear[row, :, :].shape}"
+                )
+            logging.info(
+                f"Image current shape: {image_current}"
+                )
 
         return image_current
     
     def plot_current_image(self):
         """ Plot the image of the photocurrent by each pixel. """        
-        
+                
         # Plot power image
         plt.imshow(self._image_current, cmap='gray', interpolation='nearest')
         plt.title("Image of the normalized received power")        
         plt.show()
   
-    def _bayerGBGR_to_RGB(self, bayer, height, width):
+    def _bayerGBGR_to_RGB(self, current_image, height, width):
         """ Plot the image of the photocurrent by each pixel. """        
         
         # bayer = bayer / np.max(bayer)
-        voltage_bayer = self._gain_pixel * self._t_exposure * bayer
+        voltage_bayer = self._gain_pixel * self._t_exposure * current_image
         voltage_bayer[voltage_bayer > 255] = 255
-
-        print("Maximum value of Bayer image:")     
-        print(np.max(voltage_bayer))       
-        
+                
         bayer_8bits = (voltage_bayer).astype(np.uint8)
         
         rgb_cv = cv2.cvtColor(bayer_8bits, cv2.COLOR_BAYER_RG2BGR)
+
+        logging.info(f"Maximum value of Bayer image:{np.max(voltage_bayer)}")     
+        logging.info(f"Voltage image: {voltage_bayer}")
 
         return rgb_cv
     
@@ -245,8 +261,18 @@ class RollingShutter:
         noisy_raw_image = noisy_raw_image.astype(np.uint8)
 
         return noisy_raw_image
-        
+    
     def plot_color_image(self):
+
+        logging.info(f"RGB image:", self._rgb_image)   
+
+        plt.imshow(self._rgb_image)
+        plt.title('RGB Image')        
+        plt.show()
+
+    def plot_color_noisy_image(self):
+
+        logging.info(f"Noisy image:", self._noisy_image)   
 
         plt.imshow(self._noisy_image)
         plt.title('RGB Image')        

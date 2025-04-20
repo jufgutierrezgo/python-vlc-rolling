@@ -31,6 +31,7 @@ class Transmitter:
         fwhm: np.ndarray=[10, 10, 10],
         mlambert: float = 1,        
         constellation: str = 'ieee16',
+        frequency: float = 1000,
         luminous_flux: float = 1
             ) -> None:
 
@@ -126,7 +127,10 @@ class Transmitter:
                 constellation symbols array (3xN numpy array).
                 """
                 )
-            
+        
+        self._frequency = np.float32(frequency)        
+        if self._frequency <= 0:
+            raise ValueError("Frequency must be non-negative.")
 
         self._luminous_flux = np.float32(luminous_flux)        
         if self._luminous_flux <= 0:
