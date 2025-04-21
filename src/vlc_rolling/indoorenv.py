@@ -16,15 +16,13 @@ class Indoorenv:
     def __init__(
         self,
         name: str,
-        size: np.ndarray,
-        resolution: float,
+        size: np.ndarray,        
         ceiling: tuple,
         west: tuple,
         north: tuple,
         east: tuple,
         south: tuple,
-        floor: tuple,
-        no_reflections: int = 3        
+        floor: tuple
     ) -> None:
 
         VALID_WALL_TYPES = ('diffuse', 'glossy')
@@ -37,23 +35,7 @@ class Indoorenv:
         if self._size.size != 3:
             raise ValueError(
                 "Size of the indoor environment must be an 1d-numpy array [x y z]")        
-
-        self._no_reflections = no_reflections
-        if not isinstance(self._no_reflections, int):
-            raise ValueError(
-                "No of reflections must be a positive integer between 0 and 10.")
-        if self._no_reflections < 0 or self._no_reflections > 20:
-            raise ValueError(
-                "No of reflections must be a real integer between 0 and 10.")
         
-        self._resolution = np.float32(resolution)
-        if self._resolution > min(self._size):
-            raise ValueError(
-                "Resolution of points must be less or equal to minimum size of the rectangular indoor space.")
-        if self._resolution <= 0:
-            raise ValueError(
-                "Resolution of points must be a real number greater than zero.")
-
         self._ceiling = self._validate_wall(ceiling, "ceiling")
         self._west    = self._validate_wall(west, "west")
         self._north   = self._validate_wall(north, "north")
@@ -100,31 +82,7 @@ class Indoorenv:
         if self._size.size != 3:
             raise ValueError(
                 "Size of the indoor environment must be an 1d-numpy array [x y z]")
-
-    @property
-    def no_reflections(self) -> int:
-        """The number of reflections property"""
-        return self._no_reflections
-
-    @no_reflections.setter
-    def no_reflections(self, no_reflections):
-        self._no_reflections = no_reflections
-        if self._no_reflections <= 0:
-            raise ValueError(
-                "Resolution of points must be a real integer between 0 and 10.")
-
-    @property
-    def resolution(self) -> float:
-        """The resolution property"""
-        return self._resolution
-
-    @resolution.setter
-    def resolution(self, resolution):
-        self._resolution = resolution
-        if self._resolution <= 0:
-            raise ValueError(
-                "Resolution of points must be a real number greater than zero.")
-
+    
     @property
     def ceiling(self) -> tuple:
         """The ceiling property (type, color array)"""
@@ -184,10 +142,6 @@ class Indoorenv:
             f'\n List of parameters for indoor envirionment {self._name}: \n'
             f'Name: {self._name}\n'
             f'Size [x y z] -> [m]: {self._size} \n'
-            f'Order reflection: {self._no_reflections} \n'
-            f'Resolution points [m]: {self._resolution}\n'
-            f'Smaller Area [m^2]: {self.deltaA}\n'
-            f'Number of points: {self.no_points}\n'
         )    
 
     def create_environment(self) -> None:
@@ -368,10 +322,10 @@ class Indoorenv:
         # self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 0., -555/2), width = 555.0,height = 555.0,  u_axis = vec3(1.0, 0.0, 0), v_axis = vec3(0.0, 0, -1.0)))
 
 
-    def render_environment(self, plot='false') -> None:
+    def render_environment(self, plot='false', samples_per_pixel=100) -> None:
 
         img_pil, img_np = self._scene_rt.render_linear(
-            samples_per_pixel = 1000,
+            samples_per_pixel = samples_per_pixel,
             progress_bar = False
             )
 

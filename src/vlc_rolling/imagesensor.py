@@ -220,11 +220,11 @@ class Imagesensor:
             field_of_view= 80
             )
 
-    def take_picture(self, plot='false') -> np.ndarray:
+    def take_picture(self, plot='false', samples_per_pixel=100) -> np.ndarray:
         """This function computes the projected image on the image sensor and
         computes the intensity distribution."""    
     
-        self._npimage_rgblinear_gain = self._room.render_environment(plot=plot)
+        self._npimage_rgblinear_gain = self._room.render_environment(plot=plot, samples_per_pixel=samples_per_pixel)
 
         self._crosstalk = self._compute_crosstalk(
             spd_led=self._transmitter._spd_1lm,

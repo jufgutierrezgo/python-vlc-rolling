@@ -24,9 +24,9 @@ plt.rcParams['figure.facecolor']='white'
 
 
 
-green_wall = rgb(0.0, 1.0, 0.0)
-red_wall = rgb(1.0, 0.0, 0.0)
-white_wall = rgb(0.8, 0.8, 0.8)
+green_wall = rgb(0.15, 0.4, 0.15)
+red_wall = rgb(0.75, 0.2, 0.15)
+white_wall = rgb(0.9, 0.86, 0.84)
 floor_wall = rgb(0.1, 0.1, 0.1)
 
 # room dimensions in milimeters

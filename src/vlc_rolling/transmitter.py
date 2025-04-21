@@ -27,14 +27,15 @@ class Transmitter:
         reference: str = "None",
         position: np.ndarray = [1, 1, 1],
         normal: np.ndarray = [0, -1, 0],
-        wavelengths: np.ndarray=[400, 500, 600],
-        fwhm: np.ndarray=[10, 10, 10],
+        wavelengths: np.ndarray = [400, 500, 600],
+        fwhm: np.ndarray = [10, 10, 10],
         mlambert: float = 1,        
         constellation: str = 'ieee16',
         frequency: float = 1000,
-        luminous_flux: float = 1
-            ) -> None:
-
+        luminous_flux: float = 1,
+        width: float = 1,
+        length: float = 1
+    ) -> None:
         self._name = name
 
         self._room = room
@@ -135,6 +136,14 @@ class Transmitter:
         self._luminous_flux = np.float32(luminous_flux)        
         if self._luminous_flux <= 0:
             raise ValueError("The luminous flux must be non-negative.")
+
+        self._width = np.float32(width)
+        if self._width <= 0:
+            raise ValueError("Width must be greater than zero.")
+
+        self._length = np.float32(length)
+        if self._length <= 0:
+            raise ValueError("Length must be greater than zero.")
 
         # Initial functions
         self._init_function()
@@ -258,6 +267,28 @@ class Transmitter:
         self._luminous_flux = luminous_flux
         self._init_function()
 
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        value = np.float32(value)
+        if value <= 0:
+            raise ValueError("Width must be greater than zero.")
+        self._width = value
+
+    @property
+    def length(self):
+        return self._length
+
+    @length.setter
+    def length(self, value):
+        value = np.float32(value)
+        if value <= 0:
+            raise ValueError("Length must be greater than zero.")
+        self._length = value
+
     def __str__(self) -> str:
         return (
             f'\n List of parameters for LED transmitter: \n'
@@ -317,8 +348,8 @@ class Transmitter:
                     self._position[1], 
                     self._position[2]
                     ), 
-                width = 1e2, 
-                height = 1e2, 
+                width = self._width, 
+                height = self._length, 
                 u_axis = vec3(1.0, 0.0, 0), 
                 v_axis = vec3(0.0, 0, 1.0)), 
             importance_sampled = True
