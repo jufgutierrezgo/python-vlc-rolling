@@ -81,7 +81,7 @@ img_sensor = Imagesensor(
     camera_look_at = vec3(WIDTH/2, LENGTH/2, HEIGHT),
     room = room,
     transmitter=transmitter,
-    sensor='SonyStarvisBSI'
+    sensor='SonyIMX219PQH5-C'
     )
 print(img_sensor)
 img_sensor.plot_responsivity()
@@ -104,6 +104,6 @@ rollingshutter = RollingShutter(
 )
 
 rollingshutter.plot_current_image()
-rollingshutter.plot_color_image()
+rollingshutter.plot_color_image(save='on')
 rollingshutter.add_blur(size=7, center=3.5, sigma=0.5)
 rollingshutter.plot_blurred_image()

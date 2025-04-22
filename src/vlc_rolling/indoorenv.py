@@ -275,17 +275,17 @@ class Indoorenv:
                 )
             )
 
-        # # Add north wall
-        # self._scene_rt.add(
-        #     Plane(
-        #         material = north_material,  
-        #         center = vec3(length/2, height/2, width - width),  
-        #         width = width,
-        #         height = height, 
-        #         u_axis = vec3(0.0, 1.0, 0), 
-        #         v_axis = vec3(0.0, 0, -1.0)
-        #         )
-        #     )
+        # Add north wall
+        self._scene_rt.add(
+            Plane(
+                material = north_material,  
+                center = vec3(length/2, height/2, width),  
+                width = width,
+                height = height, 
+                u_axis = vec3(0.0, 1.0, 0), 
+                v_axis = vec3(0.0, 0, -1.0)
+                )
+            )
 
         # Add ceiling
         self._scene_rt.add(

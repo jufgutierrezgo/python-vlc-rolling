@@ -258,12 +258,17 @@ class RollingShutter:
 
         return noisy_raw_image
     
-    def plot_color_image(self):
+    def plot_color_image(self, save='off'):
 
         logging.info(f"RGB image: {self._rgb_image}")   
 
         plt.imshow(self._rgb_image)
-        plt.title('RGB Image')        
+        plt.axis('off')  # Hide axis and ticks
+        plt.tight_layout(pad=0)  # Remove padding around image
+
+        if save.lower() == 'on':
+            plt.savefig("color_rolling_image.pdf", bbox_inches='tight', pad_inches=0)
+
         plt.show()
 
     def plot_color_noisy_image(self):

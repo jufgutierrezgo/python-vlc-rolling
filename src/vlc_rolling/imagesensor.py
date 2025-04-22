@@ -90,6 +90,8 @@ class Imagesensor:
         # Sensor QE loading
         if sensor == 'SonyStarvisBSI':
             self._quantum_efficiency = np.loadtxt(Kt.SENSOR_PATH + "SonyStarvisBSI.txt")
+        if sensor == 'SonyIMX219PQH5-C':
+            self._quantum_efficiency = np.loadtxt(Kt.SENSOR_PATH + "SonyIMX219PQH5-C.txt")
         else:
             raise ValueError(f"Sensor '{sensor}' is not supported.")        
         # -------------- I N I T I A L - C O D E -------------------         
@@ -249,22 +251,28 @@ class Imagesensor:
         logging.info(f"image_H_rgblinear matrix shape: {self._image_H_rgblinear.shape}")
         logging.info(f"image H rgblinear matrix:\n {self._image_H_rgblinear}")
 
-    def plot_rgblinear_image(self):
-
+    
+    def plot_rgblinear_image(self, save='off'):
         logging.info(f"RGBLinear Image: {self._npimage_rgblinear_gain}")   
 
         plt.imshow(self._npimage_rgblinear_gain)
-        plt.title('RGBLinear Image')        
+        plt.axis('off')  # Hide axis and ticks
+        plt.tight_layout(pad=0)  # Remove padding around image
+
+        if save.lower() == 'on':
+            plt.savefig("rgblinear_image.pdf", bbox_inches='tight', pad_inches=0)
+
         plt.show()
-        
 
     def plot_crosstalk_rgblinear_image(self):
 
         logging.info(f"Crosstalk+RGBLinear Image: {self._image_H_rgblinear}")   
 
         plt.imshow(self._image_H_rgblinear)
-        plt.title('Crosstalk+RGBLinear Image')        
+        plt.axis('off')  # Hides axes and ticks
+        plt.tight_layout(pad=0)  # Removes padding around the image
         plt.show()
+    
     
     def plot_quantum_efficiency(self) -> None:
         for i in range(Kt.NO_LEDS):
