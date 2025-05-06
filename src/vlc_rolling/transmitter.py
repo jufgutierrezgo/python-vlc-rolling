@@ -322,8 +322,11 @@ class Transmitter:
         self._compute_iler(self._spd_1w)
         self._avg_power_color()
         self._create_spd_1lm()
+
         # self._create_random_symbols()
-        self._create_test_symbols()
+        # self._create_test_symbols()
+        self._create_rgb_black_pattern_symbols()
+
         self._compute_cct_cri()
         self._create_light_source_in_scene()
 
@@ -733,6 +736,16 @@ class Transmitter:
         for index, counter in zip(self._symbols_decimal, range(len(self._symbols_decimal))):
             self._symbols_csk[:, counter] = self._constellation[:, index]        
 
+    def _create_rgb_black_pattern_symbols(self) -> None:
+        """ This function create a symbol test frame """
+        
+        # Create the elementary frame
+        elementary_frame = Kt.RGB_BLACK_PATTER
+        
+        # create a random symbols identifier (decimal) for payload
+        self._symbols_csk = np.tile(elementary_frame, 20)
+
+        
     def _compute_cct_cri(self) -> None:
         """ This function calculates a CCT and CRI of the QLED SPD."""
 

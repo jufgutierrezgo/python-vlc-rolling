@@ -275,6 +275,10 @@ class RollingShutter:
 
         logging.info(f"Noisy image:", self._noisy_image)   
 
+        plt.imshow(self._rgb_image)
+        plt.axis('off')  # Hide axis and ticks
+        plt.tight_layout(pad=0)  # Remove padding around image
+
         plt.imshow(self._noisy_image)
         plt.title('RGB Image with Noise')        
         plt.show()
@@ -296,7 +300,11 @@ class RollingShutter:
     
     def plot_blurred_image(self) -> None:
         """ Plot the original image and the blurred image """
-       
+
+        plt.imshow(self._rgb_image)
+        plt.axis('off')  # Hide axis and ticks
+        plt.tight_layout(pad=0)  # Remove padding around image
+
         plt.imshow(self._blurred_image)
-        plt.title('Blurred image with PSF')        
+        # plt.title('Blurred image with PSF')        
         plt.show()

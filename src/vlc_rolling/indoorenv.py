@@ -49,7 +49,7 @@ class Indoorenv:
         
         wall_type, color = wall
 
-        if wall_type not in ('diffuse', 'glossy'):
+        if wall_type not in ('diffuse', 'glossy', 'nowall'):
             raise ValueError(f"{wall_name} type must be one of {('diffuse', 'glossy')}. Got '{wall_type}'.")
 
         # color = np.array(color)
@@ -167,6 +167,8 @@ class Indoorenv:
                 spec_color=rgb(1.0, 1.0, 1.0),
                 roughness=0.1
             )
+        elif self._east[0] == 'nowall':
+            east_material = Diffuse(diff_color=self._east[1])
         else:
             raise ValueError(f"Unknown material type '{self._east[0]}' for east wall.")
 
@@ -179,6 +181,8 @@ class Indoorenv:
                 spec_color=rgb(1.0, 1.0, 1.0),
                 roughness=0.1
             )
+        elif self._north[0] == 'nowall':
+            east_material = Diffuse(diff_color=self._east[1])
         else:
             raise ValueError(f"Unknown material type '{self._north[0]}' for north wall.")
 
@@ -191,6 +195,8 @@ class Indoorenv:
                 spec_color=rgb(1.0, 1.0, 1.0),
                 roughness=0.1
             )
+        elif self._west[0] == 'nowall':
+            east_material = Diffuse(diff_color=self._west[1])
         else:
             raise ValueError(f"Unknown material type '{self._west[0]}' for west wall.")
 
@@ -203,6 +209,8 @@ class Indoorenv:
                 spec_color=rgb(1.0, 1.0, 1.0),
                 roughness=0.1
             )
+        elif self._south[0] == 'nowall':
+            east_material = Diffuse(diff_color=self._south[1])
         else:
             raise ValueError(f"Unknown material type '{self._south[0]}' for south wall.")
 
@@ -215,6 +223,8 @@ class Indoorenv:
                 spec_color=rgb(1.0, 1.0, 1.0),
                 roughness=0.1
             )
+        elif self._ceiling[0] == 'nowall':
+            east_material = Diffuse(diff_color=self._ceiling[1])
         else:
             raise ValueError(f"Unknown material type '{self._ceiling[0]}' for ceiling.")
 
@@ -227,6 +237,8 @@ class Indoorenv:
                 spec_color=rgb(1.0, 1.0, 1.0),
                 roughness=0.1
             )
+        elif self._floor[0] == 'nowall':
+            east_material = Diffuse(diff_color=self._floor[1])
         else:
             raise ValueError(f"Unknown material type '{self._floor[0]}' for floor.")
 
@@ -240,76 +252,82 @@ class Indoorenv:
         z_axis_shifting = 0
 
         # Add east wall
-        self._scene_rt.add(
-            Plane(
-                material = east_material,  
-                center = vec3(0, height/2, width/2 + z_axis_shifting), 
-                width = width,
-                height = height, 
-                u_axis = vec3(0.0, 1.0, 0), 
-                v_axis = vec3(0.0, 0, -1.0)
+        if self._east[0] != 'nowall':
+            self._scene_rt.add(
+                Plane(
+                    material = east_material,  
+                    center = vec3(0, height/2, width/2 + z_axis_shifting), 
+                    width = width,
+                    height = height, 
+                    u_axis = vec3(0.0, 1.0, 0), 
+                    v_axis = vec3(0.0, 0, -1.0)
+                    )
                 )
-            )
 
         # Add south wall
-        self._scene_rt.add(
-            Plane(
-                material = south_material,  
-                center = vec3(length/2, height/2, + z_axis_shifting), 
-                width = length,
-                height = height, 
-                u_axis = vec3(0.0, 1.0, 0), 
-                v_axis = vec3(1.0, 0, 0.0)
+        if self._south[0] != 'nowall':
+            self._scene_rt.add(
+                Plane(
+                    material = south_material,  
+                    center = vec3(length/2, height/2, 0 + z_axis_shifting), 
+                    width = length,
+                    height = height, 
+                    u_axis = vec3(0.0, 1.0, 0), 
+                    v_axis = vec3(1.0, 0, 0.0)
+                    )
                 )
-            )
 
         # Add west wall
-        self._scene_rt.add(
-            Plane(
-                material = west_material,  
-                center = vec3(length, height/2, width/2 + z_axis_shifting), 
-                width = width,
-                height = height, 
-                u_axis = vec3(0.0, 1.0, 0), 
-                v_axis = vec3(0.0, 0, -1.0)
+        if self._west[0] != 'nowall':
+            self._scene_rt.add(
+                Plane(
+                    material = west_material,  
+                    center = vec3(length, height/2, width/2 + z_axis_shifting), 
+                    width = width,
+                    height = height, 
+                    u_axis = vec3(0.0, 1.0, 0), 
+                    v_axis = vec3(0.0, 0, -1.0)
+                    )
                 )
-            )
 
         # Add north wall
-        self._scene_rt.add(
-            Plane(
-                material = north_material,  
-                center = vec3(length/2, height/2, width),  
-                width = width,
-                height = height, 
-                u_axis = vec3(0.0, 1.0, 0), 
-                v_axis = vec3(0.0, 0, -1.0)
+        if self._north[0] != 'nowall':
+            self._scene_rt.add(
+                Plane(
+                    material = north_material,  
+                    center = vec3(length/2, height/2, width),  
+                    width = width,
+                    height = height, 
+                    u_axis = vec3(0.0, 1.0, 0), 
+                    v_axis = vec3(1.0, 0, 0.0)
+                    )
                 )
-            )
 
         # Add ceiling
-        self._scene_rt.add(
-            Plane(
-                material = ceiling_material,  
-                center = vec3(length/2, height, width/2 + z_axis_shifting),  
-                width = width,
-                height = length, 
-                u_axis = vec3(1.0, 0.0, 0), 
-                v_axis = vec3(0.0, 0, -1.0)
+        if self._ceiling[0] != 'nowall':
+            self._scene_rt.add(
+                Plane(
+                    material = ceiling_material,  
+                    center = vec3(length/2, height, width/2 + z_axis_shifting),  
+                    width = width,
+                    height = length, 
+                    u_axis = vec3(1.0, 0.0, 0), 
+                    v_axis = vec3(0.0, 0, -1.0)
+                    )
                 )
-            )
 
         # Add floor
-        self._scene_rt.add(
-            Plane(
-                material = floor_material,  
-                center = vec3(length/2, 0, width/2 + z_axis_shifting),  
-                width = width,
-                height = length, 
-                u_axis = vec3(1.0, 0.0, 0), 
-                v_axis = vec3(0.0, 0.0, -1.0)
+        if self._floor[0] != 'nowall':
+            self._scene_rt.add(
+                Plane(
+                    material = floor_material,  
+                    center = vec3(length/2, 0, width/2 + z_axis_shifting),  
+                    width = width,
+                    height = length, 
+                    u_axis = vec3(1.0, 0.0, 0), 
+                    v_axis = vec3(0.0, 0.0, -1.0)
+                    )
                 )
-            )
 
         # self._scene_rt.add(Plane(material = white_diffuse,  center = vec3(555/2, 555/2, -555.0), width = 555.0,height = 555.0, u_axis = vec3(0.0, 1.0, 0), v_axis = vec3(1.0, 0, 0.0)))
 
