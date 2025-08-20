@@ -13,114 +13,114 @@ python-vlc-rolling
         :alt: Documentation Status
 
 
-**python-vlc-rolling** es un paquete de Python para simular sistemas de comunicación por luz visible (VLC) y comunicación óptica por cámara (OCC) utilizando cámaras de obturador rodante (*rolling shutter*) y modulación por desplazamiento de color (CSK). El paquete proporciona clases para definir entornos interiores (incluyendo enlaces **NLOS** con superficies reflectantes), transmisores LED multicolor, sensores de imagen y el proceso de muestreo *rolling shutter*, facilitando la investigación y la experimentación en comunicaciones ópticas inalámbricas.
+**python-vlc-rolling** is a Python package for simulating Visible Light Communication (VLC) and Optical Camera Communication (OCC) systems using rolling shutter cameras and Color Shift Keying (CSK) modulation. The package provides classes to define indoor environments (including **NLOS** links with reflective surfaces), multicolor LED transmitters, image sensors, and the rolling shutter sampling process, facilitating research and experimentation in wireless optical communications.
 
-La figura ilustra un escenario típico OCC con enlace NLOS, donde el usuario recibe información capturando la luz reflejada en una superficie mediante la cámara de un smartphone:
+The figure illustrates a typical OCC scenario with an NLOS link, where the user receives information by capturing the light reflected from a surface using a smartphone camera:
 
 .. image:: https://github.com/jufgutierrezgo/rs-vlc-model/blob/main/images/OCC-rs-csk-nlos.png?raw=true
-        :alt: Escenario OCC con obturador rodante, CSK y enlace NLOS mediante superficies reflectantes
+        :alt: OCC scenario with rolling shutter, CSK, and NLOS link via reflective surfaces
         :align: center
 
 
-¿Qué son VLC y OCC?
---------------------
+What are VLC and OCC?
+---------------------
 
-La *comunicación por luz visible (VLC)* emplea fuentes de luz (p. ej., LED) para transmitir datos modulando su intensidad. En *OCC*, una cámara actúa como receptor capturando la luz modulada. Con un sensor de **obturador rodante**, la lectura secuencial por filas convierte la modulación temporal de alta frecuencia en patrones espaciales (franjas) sobre la imagen, que luego pueden decodificarse. Técnicas basadas en color como **CSK** permiten aprovechar múltiples canales (p. ej., RGB) para incrementar la eficiencia espectral del sistema.
-
-
-Características destacadas
---------------------------
-
-- **Framework modular**: clases separadas para entorno interior, transmisores, sensores y el proceso de obturador rodante, facilitando su extensión y adaptación.
-- **Enlaces LoS y NLoS**: modelado de **reflexiones** mediante superficies con reflectancia configurable (paredes, techo, piso).
-- **Modulación por color (CSK)**: constelaciones 8-CSK, 16-CSK y superiores con espectros LED configurables por longitud de onda.
-- **Modelos de sensores realistas**: curvas de eficiencia cuántica (QE) de sensores CMOS y funciones para responsividad y formación de imagen.
-- **Análisis de canal y ruido**: ganancias ópticas, ruido de disparo y térmico, y efectos de diafonía entre canales de color.
-- **Rolling shutter configurable**: tiempos de exposición y lectura por cuadro para estudiar aliasing temporal–espacial y bandas detectables.
-- **Ejemplos y notebooks**: scripts listos para ejecutar para construir escenarios, visualizar constelaciones CSK y decodificar patrones.
+*Visible Light Communication (VLC)* uses light sources (e.g., LEDs) to transmit data by modulating their intensity. In *OCC*, a camera acts as the receiver, capturing the modulated light. With a **rolling shutter** sensor, the row-by-row sequential readout converts high-frequency temporal modulation into spatial patterns (stripes) on the image, which can then be decoded. Color-based techniques such as **CSK** exploit multiple channels (e.g., RGB) to increase the system’s spectral efficiency.
 
 
-Instalación
------------
+Key Features
+------------
 
-Instala la versión estable desde PyPI:
+- **Modular framework**: separate classes for indoor environment, transmitters, sensors, and rolling shutter process, making it easy to extend and adapt.
+- **LoS and NLoS links**: modeling **reflections** with configurable reflectance surfaces (walls, ceiling, floor).
+- **Color modulation (CSK)**: 8-CSK, 16-CSK, and higher constellations with configurable LED spectra by wavelength.
+- **Realistic sensor models**: CMOS sensor quantum efficiency (QE) curves and functions for responsivity and image formation.
+- **Channel and noise analysis**: optical gains, shot and thermal noise, and color channel crosstalk effects.
+- **Configurable rolling shutter**: exposure and frame readout times to study temporal–spatial aliasing and detectable bands.
+- **Examples and notebooks**: ready-to-run scripts to build scenarios, visualize CSK constellations, and decode patterns.
+
+
+Installation
+------------
+
+Install the stable version from PyPI:
 
 .. code-block:: bash
 
     pip install vlc_rolling
 
-Para instalar la versión de desarrollo desde la rama ``main``:
+To install the development version from the ``main`` branch:
 
 .. code-block:: bash
 
     pip install https://github.com/jufgutierrezgo/python-vlc-rolling/archive/main.zip
 
-Para trabajar localmente en modo editable:
+For local editable development:
 
 .. code-block:: bash
 
     git clone https://github.com/jufgutierrezgo/python-vlc-rolling.git
     cd python-vlc-rolling
     python -m venv venv
-    source venv/bin/activate  # o ``venv\Scripts\activate`` en Windows
+    source venv/bin/activate  # or ``venv\Scripts\activate`` on Windows
     pip install -e .[dev]
 
 
-Uso básico
-----------
+Basic Usage
+-----------
 
-Ejemplo mínimo que configura una habitación con un transmisor RGB y una cámara de obturador rodante:
+Minimal example setting up a room with an RGB transmitter and a rolling shutter camera:
 
 .. code-block:: python
 
     import vlc_rolling as vlc
 
-    # Entorno interior de 5 m × 5 m × 3 m con paredes neutras
+    # Indoor environment 5 m × 5 m × 3 m with neutral walls
     env = vlc.Indoorenv(
-        room_dimensions=(5, 5, 3),           # metros
-        wall_reflectance=(0.7, 0.7, 0.7, 0.7, 0.7, 0.7)  # (N, S, E, O, techo, piso)
+        room_dimensions=(5, 5, 3),
+        wall_reflectance=(0.7, 0.7, 0.7, 0.7, 0.7, 0.7)  # (N, S, E, W, ceiling, floor)
     )
 
-    # Transmisor en (2.5, 2.5, 3) apuntando hacia abajo (eje -Z)
+    # Transmitter at (2.5, 2.5, 3) pointing down (-Z axis)
     tx = vlc.Transmitter(
-        wavelengths=(450, 520, 620),         # nm (picos RGB)
-        luminous_flux=1000,                  # lúmenes
-        modulation='8-CSK',                  # constelación CSK
-        frequency=1000,                      # Hz (portadora/clock de modulación)
-        position=(2.5, 2.5, 3.0),            # metros (X, Y, Z)
-        orientation=(0, 0, -1)               # vector unitario
+        wavelengths=(450, 520, 620),         # nm (RGB peaks)
+        luminous_flux=1000,                  # lumens
+        modulation='8-CSK',                  # CSK constellation
+        frequency=1000,                      # Hz (carrier/clock)
+        position=(2.5, 2.5, 3.0),            # meters (X, Y, Z)
+        orientation=(0, 0, -1)               # unit vector
     )
 
-    # Sensor de imagen (ej.: modelo Sony Starvis BSI)
+    # Image sensor (e.g., Sony Starvis BSI model)
     sensor = vlc.Imagesensor(
         model='starvis_bsi',
-        resolution=(1920, 1080),             # píxeles (ancho, alto)
-        pixel_size=3.75e-6,                   # metros
-        focal_length=0.012                    # metros
+        resolution=(1920, 1080),             # pixels (width, height)
+        pixel_size=3.75e-6,                  # meters
+        focal_length=0.012                   # meters
     )
 
-    # Parámetros del obturador rodante
+    # Rolling shutter parameters
     rs = vlc.Rollingshutter(
         exposure_time=1/1000,                # s
-        readout_time=1/60                    # s (lectura por cuadro)
+        readout_time=1/60                    # s (per frame)
     )
 
-    # Ejecutar la simulación y obtener el patrón RGB
+    # Run simulation and obtain RGB pattern
     image = rs.capture(env, tx, sensor)
 
-    # Visualizar el resultado (requiere matplotlib)
+    # Visualize result (requires matplotlib)
     import matplotlib.pyplot as plt
     plt.imshow(image)
-    plt.title("Patrón RS-CSK (ejemplo)")
+    plt.title("RS-CSK Pattern (example)")
     plt.xlabel("x [px]")
     plt.ylabel("y [px]")
     plt.show()
 
 
-Ejemplo NLoS con superficies reflectantes
------------------------------------------
+NLoS Example with Reflective Surfaces
+-------------------------------------
 
-Este ejemplo muestra un enlace no línea de vista (NLoS) usando reflectancias más altas en paredes y techo. Útil para estudiar cómo el *rolling shutter* captura información reflejada.
+This example shows a non-line-of-sight (NLoS) link using higher wall and ceiling reflectances. Useful to study how the rolling shutter captures reflected information.
 
 .. code-block:: python
 
@@ -128,7 +128,7 @@ Este ejemplo muestra un enlace no línea de vista (NLoS) usando reflectancias m�
 
     env = vlc.Indoorenv(
         room_dimensions=(6, 4, 3),
-        wall_reflectance=(0.85, 0.85, 0.85, 0.85, 0.9, 0.6)  # paredes y techo más reflectivos
+        wall_reflectance=(0.85, 0.85, 0.85, 0.85, 0.9, 0.6)  # more reflective walls and ceiling
     )
 
     tx = vlc.Transmitter(
@@ -137,7 +137,7 @@ Este ejemplo muestra un enlace no línea de vista (NLoS) usando reflectancias m�
         modulation='16-CSK',
         frequency=2000,
         position=(3.0, 2.0, 2.9),
-        orientation=(0.2, 0.0, -0.98)  # leve inclinación hacia una pared
+        orientation=(0.2, 0.0, -0.98)  # slight tilt towards a wall
     )
 
     sensor = vlc.Imagesensor(
@@ -154,73 +154,74 @@ Este ejemplo muestra un enlace no línea de vista (NLoS) usando reflectancias m�
 
     image = rs.capture(env, tx, sensor)
 
-    # (Opcional) Decodificación/estimación de símbolos CSK a partir del patrón
-    # symbols = vlc.decode_csk(image, method="ml")  # si está disponible en la API
+    # (Optional) CSK symbol decoding/estimation
+    # symbols = vlc.decode_csk(image, method="ml")  # if available in API
 
     import matplotlib.pyplot as plt
     plt.imshow(image)
-    plt.title("Patrón RS-CSK en enlace NLoS (reflexiones)")
+    plt.title("RS-CSK Pattern in NLoS Link (reflections)")
     plt.show()
 
 
-Notas sobre *rolling shutter* y frecuencia detectable
------------------------------------------------------
+Notes on Rolling Shutter and Detectable Frequency
+-------------------------------------------------
 
-- El parámetro ``readout_time`` representa el **tiempo de lectura por cuadro**. El tiempo por fila se aproxima como:
-  ``t_fila = readout_time / resolution[1]``.
-- Para evitar aliasing excesivo, la frecuencia efectiva detectable está acotada aproximadamente por ``f_max ≈ 1 / (2 * t_fila)``.
-- La elección de ``frequency`` (modulación) y ``exposure_time`` impacta la visibilidad del patrón de franjas y la relación señal-ruido.
+- The ``readout_time`` parameter represents the **frame readout time**. Row time is approximated as:
+  ``t_row = readout_time / resolution[1]``.
+- To avoid excessive aliasing, the effective detectable frequency is roughly bounded by:
+  ``f_max ≈ 1 / (2 * t_row)``.
+- The choice of ``frequency`` (modulation) and ``exposure_time`` impacts stripe visibility and signal-to-noise ratio.
 
 
-Documentación
+Documentation
 -------------
 
-La documentación completa (tutoriales, referencia de API y fundamentos teóricos) está en Read the Docs:
+The complete documentation (tutorials, API reference, and theoretical background) is available at Read the Docs:
 
 https://vlc-rolling.readthedocs.io
 
-Si el sitio no está disponible, puedes construir la documentación localmente con Sphinx:
+If the site is unavailable, you can build the documentation locally with Sphinx:
 
 .. code-block:: bash
 
     cd docs
     make html
 
-El HTML generado estará en ``docs/_build/html``.
+Generated HTML will be in ``docs/_build/html``.
 
 
-Cómo contribuir
----------------
+Contributing
+------------
 
-¡Las contribuciones son bienvenidas! Para reportar errores, sugerir mejoras o añadir soporte a nuevos sensores/constelaciones:
+Contributions are welcome! To report bugs, suggest improvements, or add support for new sensors/constellations:
 
-- Haz un *fork* del repositorio y crea una rama nueva para tu contribución.
-- Sigue el estilo de código del proyecto e incluye pruebas.
-- Ejecuta ``make lint`` y ``make test`` antes de enviar un *pull request*.
-- Actualiza la documentación y los ejemplos al agregar nuevas funcionalidades.
-- Consulta ``CONTRIBUTING.rst`` para más detalles sobre el flujo de trabajo.
-
-
-Licencia
---------
-
-Este proyecto está licenciado bajo MIT. Consulta el archivo ``LICENSE`` para más detalles.
+- Fork the repository and create a new branch for your contribution.
+- Follow the project’s code style and include tests.
+- Run ``make lint`` and ``make test`` before submitting a pull request.
+- Update documentation and examples when adding new features.
+- See ``CONTRIBUTING.rst`` for more details on the workflow.
 
 
-Autores
+License
 -------
 
-`Juan-Felipe Gutiérrez-Gómez <jufgutierrezgo@unal.unal.edu.co>`_ es el creador y mantenedor principal. La lista completa de colaboradores se encuentra en ``AUTHORS.rst``.
+This project is licensed under the MIT License. See the ``LICENSE`` file for more details.
 
 
-Citación
+Authors
+-------
+
+`Juan-Felipe Gutiérrez-Gómez <jufgutierrezgo@unal.unal.edu.co>`_ is the creator and main maintainer. The full list of contributors can be found in ``AUTHORS.rst``.
+
+
+Citation
 --------
 
-Si utilizas este paquete o resultados derivados en trabajos académicos, por favor cita:
+If you use this package or derived results in academic work, please cite:
 
-**Artículo publicado (OCC NLoS con RS y CSK)**
+**Published paper (OCC NLoS with RS and CSK)**
 
-J. F. Gutierrez, D. Sandoval y J. M. Quintero, *“An Analytical Performance Study of a Non-Line-of-Sight Optical Camera Communication System Based on Rolling Shutter and Color Shift Keying,”* en **2023 IEEE Sustainable Smart Lighting World Conference & Expo (LS18)**, Mumbai, India, 2023, pp. 1–6. doi: 10.1109/LS1858153.2023.10170645.
+J. F. Gutierrez, D. Sandoval, and J. M. Quintero, *“An Analytical Performance Study of a Non-Line-of-Sight Optical Camera Communication System Based on Rolling Shutter and Color Shift Keying,”* in **2023 IEEE Sustainable Smart Lighting World Conference & Expo (LS18)**, Mumbai, India, 2023, pp. 1–6. doi: 10.1109/LS1858153.2023.10170645.
 
 .. code-block:: bibtex
 
@@ -234,6 +235,6 @@ J. F. Gutierrez, D. Sandoval y J. M. Quintero, *“An Analytical Performance Stu
       doi       = {10.1109/LS1858153.2023.10170645}
     }
 
-**Repositorio y paquete**
+**Repository and package**
 
-Cita este repositorio como: *python-vlc-rolling: Simulación de OCC con obturador rodante y CSK en enlaces LoS/NLoS*. Incluye la URL del proyecto y el número de versión de PyPI que utilizaste.
+Cite this repository as: *python-vlc-rolling: OCC Simulation with Rolling Shutter and CSK in LoS/NLoS links*. Include the project URL and the PyPI version number you used.
